@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PRIORITY_DOT_CLASSES, PRIORITY_LABELS, STATUS_DOT_CLASSES } from "../colors.js";
 import { useStore } from "../store.js";
-import type { Priority } from "../types.js";
+import type { Priority, Task } from "../types.js";
 import { api } from "../api.js";
 
 function formatTime(iso: string): string {
@@ -15,6 +15,32 @@ function formatTime(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+function pluralize(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+/**
+ * Surfaces how much happened between two update checkpoints — the "cycles" of
+ * comments/activity a big update distills. Returns null for the very first
+ * update (task creation), where there's nothing to summarize yet.
+ */
+function describeActivitySince(task: Task, sinceIso: string | undefined, untilIso: string): string | null {
+  if (!sinceIso) return null;
+  const inWindow = (ts: string) => ts > sinceIso && ts <= untilIso;
+  const comments = task.comments.filter((c) => inWindow(c.timestamp)).length;
+  const activity = task.activity.filter((a) => inWindow(a.timestamp)).length;
+
+  const parts: string[] = [];
+  if (comments > 0) parts.push(`${comments} ${pluralize(comments, "комментарий", "комментария", "комментариев")}`);
+  if (activity > 0) parts.push(`${activity} ${pluralize(activity, "действие", "действия", "действий")}`);
+  if (!parts.length) return null;
+  return `с прошлого апдейта: ${parts.join(", ")}`;
 }
 
 export function TaskDetail() {
@@ -198,6 +224,63 @@ export function TaskDetail() {
 
             <section className="mb-6">
               <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                Апдейты — эволюция задачи
+              </h2>
+              <div className="flex flex-col gap-1.5">
+                {task.updates.map((u, i) => {
+                  const prev = task.updates[i + 1];
+                  const sinceLabel = describeActivitySince(task, prev?.timestamp, u.timestamp);
+                  const expanded = expandedVersions.has(u.version);
+                  return (
+                    <div
+                      key={u.version}
+                      className="rounded-md border border-neutral-150 dark:border-neutral-800"
+                    >
+                      <button
+                        onClick={() => toggleVersion(u.version)}
+                        className="flex w-full items-start gap-2 rounded-md px-2.5 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
+                      >
+                        <span className="mt-0.5 shrink-0 text-[10px] text-neutral-400">
+                          {expanded ? "▾" : "▸"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-neutral-400">
+                            <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+                              v{u.version}
+                            </span>
+                            <span>{formatTime(u.timestamp)}</span>
+                            <span>·</span>
+                            <span>
+                              {u.author === "agent" ? "агент" : u.author === "human" ? "человек" : u.author}
+                            </span>
+                            {sinceLabel && (
+                              <>
+                                <span>·</span>
+                                <span>{sinceLabel}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="mt-0.5 whitespace-pre-wrap text-[13px] text-neutral-800 dark:text-neutral-200">
+                            {u.summary}
+                          </div>
+                        </div>
+                      </button>
+                      {expanded && (
+                        <div className="border-t border-neutral-150 px-2.5 py-2 dark:border-neutral-800">
+                          <div className="mb-1 text-[11px] text-neutral-400">Текст задачи на этот момент:</div>
+                          <div className="whitespace-pre-wrap rounded-md bg-neutral-50 px-2.5 py-2 text-[12px] text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
+                            {u.description || "(пусто)"}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="mb-6">
+              <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
                 Подзадачи{" "}
                 {task.subtasks.length > 0 &&
                   `(${task.subtasks.filter((s) => s.done).length}/${task.subtasks.length})`}
@@ -255,40 +338,6 @@ export function TaskDetail() {
                   className="flex-1 rounded-md border border-neutral-200 bg-transparent px-2 py-1 text-[12px] outline-none focus:border-accent dark:border-neutral-700"
                 />
               </form>
-            </section>
-
-            <section className="mb-6">
-              <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                Апдейты — эволюция задачи
-              </h2>
-              <div className="flex flex-col gap-3 border-l border-neutral-150 pl-3 dark:border-neutral-800">
-                {task.updates.map((u) => (
-                  <div key={u.version} className="text-[13px]">
-                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-400">
-                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
-                        v{u.version}
-                      </span>
-                      <span>{formatTime(u.timestamp)}</span>
-                      <span>·</span>
-                      <span>{u.author === "agent" ? "агент" : u.author === "human" ? "человек" : u.author}</span>
-                    </div>
-                    <div className="mt-0.5 whitespace-pre-wrap text-neutral-800 dark:text-neutral-200">
-                      {u.summary}
-                    </div>
-                    <button
-                      onClick={() => toggleVersion(u.version)}
-                      className="mt-1 text-[11px] text-accent hover:underline"
-                    >
-                      {expandedVersions.has(u.version) ? "Скрыть текст версии" : "Показать текст версии"}
-                    </button>
-                    {expandedVersions.has(u.version) && (
-                      <div className="mt-1.5 whitespace-pre-wrap rounded-md bg-neutral-50 px-2.5 py-2 text-[12px] text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
-                        {u.description || "(пусто)"}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
             </section>
 
             <section className="mb-6">
