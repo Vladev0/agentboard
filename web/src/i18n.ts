@@ -58,6 +58,8 @@ interface Dictionary {
   subtaskBadge: string;
   deleteTaskTooltip: string;
   closeTooltip: string;
+  maximizeTooltip: string;
+  restoreSizeTooltip: string;
 
   roleAgent: string;
   roleHuman: string;
@@ -133,6 +135,8 @@ const en: Dictionary = {
   subtaskBadge: "Subtask",
   deleteTaskTooltip: "Delete task",
   closeTooltip: "Close",
+  maximizeTooltip: "Maximize",
+  restoreSizeTooltip: "Restore size",
 
   roleAgent: "agent",
   roleHuman: "human",
@@ -208,6 +212,8 @@ const es: Dictionary = {
   subtaskBadge: "Subtarea",
   deleteTaskTooltip: "Eliminar tarea",
   closeTooltip: "Cerrar",
+  maximizeTooltip: "Maximizar",
+  restoreSizeTooltip: "Restaurar tamaño",
 
   roleAgent: "agente",
   roleHuman: "humano",
@@ -283,6 +289,8 @@ const ru: Dictionary = {
   subtaskBadge: "Подзадача",
   deleteTaskTooltip: "Удалить задачу",
   closeTooltip: "Закрыть",
+  maximizeTooltip: "Развернуть на весь экран",
+  restoreSizeTooltip: "Восстановить размер",
 
   roleAgent: "агент",
   roleHuman: "человек",

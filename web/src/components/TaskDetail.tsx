@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PRIORITY_DOT_CLASSES, STATUS_DOT_CLASSES } from "../colors.js";
 import { cap, priorityLabels, useT } from "../i18n.js";
 import { useStore } from "../store.js";
@@ -78,6 +78,8 @@ export function TaskDetail() {
   const [subtaskDraft, setSubtaskDraft] = useState("");
   const [expandedVersions, setExpandedVersions] = useState<Set<number>>(new Set());
   const [activityOpen, setActivityOpen] = useState(false);
+  const [maximized, setMaximized] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDescDraft(task?.description ?? "");
@@ -132,6 +134,19 @@ export function TaskDetail() {
     deleteTask(task!.id);
   }
 
+  function toggleMaximize() {
+    const el = panelRef.current;
+    if (!el) return;
+    if (maximized) {
+      el.style.width = "";
+      el.style.height = "";
+    } else {
+      el.style.width = "96vw";
+      el.style.height = "94vh";
+    }
+    setMaximized((v) => !v);
+  }
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-0 md:p-10"
@@ -139,7 +154,10 @@ export function TaskDetail() {
         if (e.target === e.currentTarget) closeTask();
       }}
     >
-      <div className="flex h-full w-full flex-col overflow-hidden border border-neutral-150 bg-white shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0e] md:h-[min(84vh,860px)] md:w-[min(880px,92vw)] md:rounded-xl">
+      <div
+        ref={panelRef}
+        className="flex h-full w-full flex-col overflow-hidden border border-neutral-150 bg-white shadow-2xl dark:border-neutral-800 dark:bg-[#0d0d0e] md:h-[min(84vh,860px)] md:w-[min(880px,92vw)] md:min-h-[360px] md:min-w-[420px] md:max-h-[100vh] md:max-w-[100vw] md:resize md:rounded-xl"
+      >
         <div className="flex items-center justify-between border-b border-neutral-150 px-4 py-3 dark:border-neutral-800">
           <div className="flex min-w-0 items-center gap-1.5 text-[12px]">
             {task.parent && (
@@ -168,6 +186,13 @@ export function TaskDetail() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={toggleMaximize}
+              title={maximized ? t.restoreSizeTooltip : t.maximizeTooltip}
+              className="hidden rounded px-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 md:block dark:hover:bg-neutral-800"
+            >
+              {maximized ? "⤡" : "⤢"}
+            </button>
             <button
               onClick={deleteCurrentTask}
               title={t.deleteTaskTooltip}
