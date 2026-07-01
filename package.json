@@ -1,0 +1,34 @@
+{
+  "name": "agentboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Local Linear-like task board for humans and AI coding agents, backed by a markdown vault.",
+  "scripts": {
+    "dev:server": "tsx watch src/server/index.ts",
+    "dev:web": "npm run dev --prefix web",
+    "build:web": "npm run build --prefix web",
+    "build": "npm run build:web && tsc -p tsconfig.json",
+    "start": "node dist/server/index.js",
+    "mcp": "tsx src/mcp/index.ts",
+    "seed": "tsx src/core/seed.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/static": "^7.0.4",
+    "@fastify/websocket": "^10.0.1",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "chokidar": "^3.6.0",
+    "fastify": "^4.28.1",
+    "gray-matter": "^4.0.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.5"
+  }
+}
