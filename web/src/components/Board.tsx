@@ -9,9 +9,27 @@ export function Board() {
   const project = useStore((s) => s.projects.find((p) => p.slug === s.selectedSlug));
   const tasks = useStore((s) => (s.selectedSlug ? s.tasksBySlug[s.selectedSlug] ?? [] : []));
   const setStatus = useStore((s) => s.setStatus);
+  const apiError = useStore((s) => s.apiError);
+  const init = useStore((s) => s.init);
   const [showNewTask, setShowNewTask] = useState(false);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
   const t = useT();
+
+  if (apiError) {
+    return (
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+        <p className="text-[13px] font-medium text-red-600 dark:text-red-400">{t.connectionErrorTitle}</p>
+        <p className="max-w-sm text-[12px] text-neutral-400">{t.connectionErrorBody}</p>
+        <p className="max-w-sm text-[11px] text-neutral-300">{apiError}</p>
+        <button
+          onClick={() => init()}
+          className="mt-1 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-accent-hover"
+        >
+          {t.retryButton}
+        </button>
+      </div>
+    );
+  }
 
   if (!project) {
     return (

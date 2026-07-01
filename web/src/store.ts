@@ -32,6 +32,8 @@ interface State {
   sidebarCollapsed: boolean;
   loadingTasks: boolean;
   locale: Locale;
+  /** Set when the API is unreachable — distinct from "no projects exist yet" in the UI. */
+  apiError: string | null;
 
   init: () => Promise<void>;
   selectProject: (slug: string) => Promise<void>;
@@ -69,12 +71,17 @@ export const useStore = create<State>((set, get) => ({
   sidebarCollapsed: localStorage.getItem(SIDEBAR_KEY) === "1",
   loadingTasks: false,
   locale: loadStoredLocale(),
+  apiError: null,
 
   init: async () => {
-    const projects = await api.listProjects();
-    set({ projects });
-    if (projects[0] && !get().selectedSlug) {
-      await get().selectProject(projects[0].slug);
+    try {
+      const projects = await api.listProjects();
+      set({ projects, apiError: null });
+      if (projects[0] && !get().selectedSlug) {
+        await get().selectProject(projects[0].slug);
+      }
+    } catch (err) {
+      set({ apiError: err instanceof Error ? err.message : String(err) });
     }
   },
 
@@ -90,8 +97,12 @@ export const useStore = create<State>((set, get) => ({
   },
 
   reloadProjects: async () => {
-    const projects = await api.listProjects();
-    set({ projects });
+    try {
+      const projects = await api.listProjects();
+      set({ projects, apiError: null });
+    } catch (err) {
+      set({ apiError: err instanceof Error ? err.message : String(err) });
+    }
   },
 
   openTask: async (id) => {

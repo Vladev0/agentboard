@@ -10,15 +10,19 @@ export function NewTaskModal({ onClose }: { onClose: () => void }) {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const t = useT();
   const labels = priorityLabels(t);
 
   async function submit() {
     if (!title.trim() || submitting) return;
     setSubmitting(true);
+    setError(null);
     try {
       await createTask(title.trim(), description.trim() || undefined, priority);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
@@ -52,6 +56,11 @@ export function NewTaskModal({ onClose }: { onClose: () => void }) {
             </option>
           ))}
         </select>
+        {error && (
+          <p className="text-[12px] text-red-600 dark:text-red-400">
+            {t.genericErrorPrefix} {error}
+          </p>
+        )}
         <button
           onClick={submit}
           disabled={!title.trim() || submitting}

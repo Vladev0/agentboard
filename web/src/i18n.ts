@@ -27,6 +27,10 @@ interface Dictionary {
   newProject: string;
   needsAttentionTooltip: (n: number) => string;
   noProjectsYet: string;
+  connectionErrorTitle: string;
+  connectionErrorBody: string;
+  retryButton: string;
+  genericErrorPrefix: string;
   taskCount: (n: number) => string;
   newTaskButton: string;
   emptyColumn: string;
@@ -97,6 +101,10 @@ const en: Dictionary = {
   newProject: "New project",
   needsAttentionTooltip: (n) => `${n} ${n === 1 ? "task needs" : "tasks need"} your input`,
   noProjectsYet: "No projects yet. Create the first one in the left panel.",
+  connectionErrorTitle: "Can't reach the server",
+  connectionErrorBody: "The API server isn't responding. Check that it's running, then retry.",
+  retryButton: "Retry",
+  genericErrorPrefix: "Something went wrong:",
   taskCount: (n) => `${n} ${n === 1 ? "task" : "tasks"}`,
   newTaskButton: "+ Task",
   emptyColumn: "Empty",
@@ -175,6 +183,10 @@ const es: Dictionary = {
   newProject: "Nuevo proyecto",
   needsAttentionTooltip: (n) => `${n} ${n === 1 ? "tarea necesita" : "tareas necesitan"} tu atención`,
   noProjectsYet: "Aún no hay proyectos. Crea el primero en el panel izquierdo.",
+  connectionErrorTitle: "No se puede conectar con el servidor",
+  connectionErrorBody: "El servidor de la API no responde. Comprueba que esté en ejecución y vuelve a intentarlo.",
+  retryButton: "Reintentar",
+  genericErrorPrefix: "Algo salió mal:",
   taskCount: (n) => `${n} ${n === 1 ? "tarea" : "tareas"}`,
   newTaskButton: "+ Tarea",
   emptyColumn: "Vacío",
@@ -254,6 +266,10 @@ const ru: Dictionary = {
   needsAttentionTooltip: (n) =>
     `${n} ${ruPlural(n, "задача", "задачи", "задач")} ${n === 1 ? "ждёт" : "ждут"} вашего внимания`,
   noProjectsYet: "Нет ни одного проекта. Создайте первый в левой панели.",
+  connectionErrorTitle: "Не удаётся подключиться к серверу",
+  connectionErrorBody: "API-сервер не отвечает. Проверьте, что он запущен, и повторите попытку.",
+  retryButton: "Повторить",
+  genericErrorPrefix: "Что-то пошло не так:",
   taskCount: (n) => `${n} ${ruPlural(n, "задача", "задачи", "задач")}`,
   newTaskButton: "+ Задача",
   emptyColumn: "Пусто",
