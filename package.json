@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Local Linear-like task board for humans and AI coding agents, backed by a markdown vault.",
+  "description": "Local kanban task board for humans and AI coding agents, backed by a markdown vault.",
   "scripts": {
     "dev:server": "tsx watch src/server/index.ts",
     "dev:web": "npm run dev --prefix web",
