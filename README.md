@@ -1,5 +1,11 @@
 # AgentBoard
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![MCP](https://img.shields.io/badge/MCP-compatible-6E56CF)
+
 Локальный трекер задач с чистым канбан-интерфейсом — для совместной работы человека и
 AI-агентов. Все данные — обычные markdown-файлы в vault-папке: видны и редактируемы в
 любом текстовом редакторе, версионируются прямо внутри файла, без git.
