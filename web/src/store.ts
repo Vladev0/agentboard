@@ -9,6 +9,20 @@ function detectDefaultLocale(): Locale {
   return "en";
 }
 
+/** How many tasks, across all projects, sit in a status marked `blocksOnHuman`. */
+export function needsAttentionCount(projects: Project[]): number {
+  return projects.reduce(
+    (sum, p) =>
+      sum + p.statuses.filter((s) => s.blocksOnHuman).reduce((n, s) => n + (p.counts[s.id] ?? 0), 0),
+    0
+  );
+}
+
+/** Per-project version of the same count, for a dot next to each project row. */
+export function projectNeedsAttentionCount(project: Project): number {
+  return project.statuses.filter((s) => s.blocksOnHuman).reduce((n, s) => n + (project.counts[s.id] ?? 0), 0);
+}
+
 interface State {
   projects: Project[];
   selectedSlug: string | null;

@@ -5,6 +5,9 @@ export interface StatusDef {
   id: string;
   name: string;
   color: string;
+  /** Tasks parked here are waiting on a human decision — surfaced as a global count so a
+   *  person supervising a long agent loop can tell at a glance whether they're needed. */
+  blocksOnHuman?: boolean;
 }
 
 export interface ProjectConfig {

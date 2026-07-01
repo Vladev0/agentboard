@@ -6,6 +6,7 @@ export interface StatusDef {
   id: string;
   name: string;
   color: string;
+  blocksOnHuman?: boolean;
 }
 
 export interface Project {

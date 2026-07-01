@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LOCALES, LOCALE_NAMES, useT } from "../i18n.js";
-import { useStore } from "../store.js";
+import { needsAttentionCount, projectNeedsAttentionCount, useStore } from "../store.js";
 import { NewProjectModal } from "./NewProjectModal.js";
 
 export function Sidebar() {
@@ -13,6 +13,7 @@ export function Sidebar() {
   const setLocale = useStore((s) => s.setLocale);
   const [showNewProject, setShowNewProject] = useState(false);
   const t = useT();
+  const attentionTotal = needsAttentionCount(projects);
 
   return (
     <div
@@ -22,10 +23,22 @@ export function Sidebar() {
     >
       <div className="flex items-center justify-between px-3 py-3">
         {!collapsed && <span className="text-[13px] font-semibold tracking-tight">AgentBoard</span>}
+        {attentionTotal > 0 && (
+          <span
+            title={t.needsAttentionTooltip(attentionTotal)}
+            className={`flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white ${
+              collapsed ? "ml-auto" : "ml-2"
+            }`}
+          >
+            {attentionTotal}
+          </span>
+        )}
         <button
           onClick={toggle}
           title={collapsed ? t.expandPanel : t.collapsePanel}
-          className="ml-auto flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-200/70 hover:text-neutral-700 dark:hover:bg-neutral-800"
+          className={`flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-200/70 hover:text-neutral-700 dark:hover:bg-neutral-800 ${
+            collapsed && attentionTotal > 0 ? "" : "ml-auto"
+          }`}
         >
           {collapsed ? "»" : "«"}
         </button>
@@ -34,12 +47,13 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto px-1.5">
         {projects.map((project) => {
           const active = project.slug === selectedSlug;
+          const attention = projectNeedsAttentionCount(project);
           return (
             <button
               key={project.slug}
               onClick={() => selectProject(project.slug)}
-              title={project.name}
-              className={`group mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
+              title={attention > 0 ? `${project.name} — ${t.needsAttentionTooltip(attention)}` : project.name}
+              className={`group relative mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
                 active
                   ? "bg-accent/10 text-accent"
                   : "text-neutral-600 hover:bg-neutral-200/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -52,6 +66,9 @@ export function Sidebar() {
               >
                 {project.key.slice(0, 2)}
               </span>
+              {attention > 0 && (
+                <span className="absolute left-6 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              )}
               {!collapsed && (
                 <>
                   <span className="flex-1 truncate">{project.name}</span>

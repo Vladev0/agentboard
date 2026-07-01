@@ -73,7 +73,14 @@ function seed(): void {
     labels: ["bug"],
     order: 50,
   });
-  updateStatus(vaultRoot, web.slug, w5.id, "todo");
+  updateStatus(vaultRoot, web.slug, w5.id, "needs_input");
+  addComment(
+    vaultRoot,
+    web.slug,
+    w5.id,
+    "Баг в стороннем regex-пакете валидации email. Либо патчим его форк, либо меняем пакет целиком — второе затронет ещё 3 формы в проекте. Как предпочитаете?",
+    "agent"
+  );
 
   createTask(vaultRoot, web.slug, {
     title: "Написать e2e тесты для checkout",

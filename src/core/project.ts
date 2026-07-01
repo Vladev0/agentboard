@@ -14,6 +14,7 @@ export const DEFAULT_STATUSES: StatusDef[] = [
   { id: "backlog", name: "Backlog", color: "gray" },
   { id: "todo", name: "Todo", color: "blue" },
   { id: "in_progress", name: "In Progress", color: "yellow" },
+  { id: "needs_input", name: "Needs Input", color: "red", blocksOnHuman: true },
   { id: "in_review", name: "In Review", color: "purple" },
   { id: "done", name: "Done", color: "green" },
 ];

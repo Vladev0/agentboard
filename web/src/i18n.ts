@@ -25,6 +25,7 @@ interface Dictionary {
   expandPanel: string;
   collapsePanel: string;
   newProject: string;
+  needsAttentionTooltip: (n: number) => string;
   noProjectsYet: string;
   taskCount: (n: number) => string;
   newTaskButton: string;
@@ -94,6 +95,7 @@ const en: Dictionary = {
   expandPanel: "Expand panel",
   collapsePanel: "Collapse panel",
   newProject: "New project",
+  needsAttentionTooltip: (n) => `${n} ${n === 1 ? "task needs" : "tasks need"} your input`,
   noProjectsYet: "No projects yet. Create the first one in the left panel.",
   taskCount: (n) => `${n} ${n === 1 ? "task" : "tasks"}`,
   newTaskButton: "+ Task",
@@ -171,6 +173,7 @@ const es: Dictionary = {
   expandPanel: "Expandir panel",
   collapsePanel: "Contraer panel",
   newProject: "Nuevo proyecto",
+  needsAttentionTooltip: (n) => `${n} ${n === 1 ? "tarea necesita" : "tareas necesitan"} tu atención`,
   noProjectsYet: "Aún no hay proyectos. Crea el primero en el panel izquierdo.",
   taskCount: (n) => `${n} ${n === 1 ? "tarea" : "tareas"}`,
   newTaskButton: "+ Tarea",
@@ -248,6 +251,8 @@ const ru: Dictionary = {
   expandPanel: "Развернуть панель",
   collapsePanel: "Свернуть панель",
   newProject: "Новый проект",
+  needsAttentionTooltip: (n) =>
+    `${n} ${ruPlural(n, "задача", "задачи", "задач")} ${n === 1 ? "ждёт" : "ждут"} вашего внимания`,
   noProjectsYet: "Нет ни одного проекта. Создайте первый в левой панели.",
   taskCount: (n) => `${n} ${ruPlural(n, "задача", "задачи", "задач")}`,
   newTaskButton: "+ Задача",
