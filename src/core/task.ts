@@ -18,6 +18,8 @@ import {
   listTaskFiles,
   nextTaskNumber,
   taskFile,
+  tasksDir,
+  withFileLock,
 } from "./vault.js";
 
 interface RawTask {
@@ -65,10 +67,26 @@ function write(vaultRoot: string, slug: string, raw: RawTask): void {
 function syncParentSubtasksSection(vaultRoot: string, slug: string, parentId: string | null): void {
   if (!parentId) return;
   try {
-    write(vaultRoot, slug, readRaw(vaultRoot, slug, parentId));
+    withFileLock(taskFile(vaultRoot, slug, parentId), () => {
+      write(vaultRoot, slug, readRaw(vaultRoot, slug, parentId));
+    });
   } catch {
     // Parent file missing (e.g. removed externally) — nothing to sync.
   }
+}
+
+/**
+ * Runs a read-modify-write cycle on a task file under a cross-process lock, so the
+ * REST server and a separately-running MCP server can never interleave writes to the
+ * same file (see withFileLock). Every mutating operation below goes through this.
+ */
+function mutateTask(vaultRoot: string, slug: string, id: string, mutate: (raw: RawTask) => void): RawTask {
+  return withFileLock(taskFile(vaultRoot, slug, id), () => {
+    const raw = readRaw(vaultRoot, slug, id);
+    mutate(raw);
+    write(vaultRoot, slug, raw);
+    return raw;
+  });
 }
 
 export function readTask(vaultRoot: string, slug: string, id: string): Task {
@@ -113,33 +131,39 @@ export interface CreateTaskInput {
 }
 
 export function createTask(vaultRoot: string, slug: string, input: CreateTaskInput): Task {
-  const project = readProject(vaultRoot, slug);
-  const n = nextTaskNumber(vaultRoot, slug, project.key);
-  const id = `${project.key}-${n}`;
-  const now = new Date().toISOString();
-  const description = input.description ?? "";
+  // Locked at the project's tasks-directory level (not a specific file, which doesn't exist
+  // yet) so two concurrent creates in the same project can't allocate the same next id.
+  const id = withFileLock(tasksDir(vaultRoot, slug), () => {
+    const project = readProject(vaultRoot, slug);
+    const n = nextTaskNumber(vaultRoot, slug, project.key);
+    const newId = `${project.key}-${n}`;
+    const now = new Date().toISOString();
+    const description = input.description ?? "";
 
-  const frontmatter: TaskFrontmatter = {
-    id,
-    title: input.title,
-    status: project.statuses[0]?.id ?? "todo",
-    priority: input.priority ?? "medium",
-    assignee: input.assignee ?? "agent",
-    parent: input.parent ?? null,
-    order: input.order ?? n * 10,
-    blockedBy: input.blockedBy ?? [],
-    labels: input.labels ?? [],
-    created: now,
-    updated: now,
-    version: 1,
-  };
+    const frontmatter: TaskFrontmatter = {
+      id: newId,
+      title: input.title,
+      status: project.statuses[0]?.id ?? "todo",
+      priority: input.priority ?? "medium",
+      assignee: input.assignee ?? "agent",
+      parent: input.parent ?? null,
+      order: input.order ?? n * 10,
+      blockedBy: input.blockedBy ?? [],
+      labels: input.labels ?? [],
+      created: now,
+      updated: now,
+      version: 1,
+    };
 
-  const updates: UpdateEntry[] = [
-    { version: 1, timestamp: now, author: input.author ?? "agent", summary: "Задача создана.", description },
-  ];
+    const updates: UpdateEntry[] = [
+      { version: 1, timestamp: now, author: input.author ?? "agent", summary: "Задача создана.", description },
+    ];
 
-  write(vaultRoot, slug, { frontmatter, description, updates, comments: [], activity: [] });
-  syncParentSubtasksSection(vaultRoot, slug, frontmatter.parent);
+    write(vaultRoot, slug, { frontmatter, description, updates, comments: [], activity: [] });
+    return newId;
+  });
+
+  syncParentSubtasksSection(vaultRoot, slug, input.parent ?? null);
   return readTask(vaultRoot, slug, id);
 }
 
@@ -152,11 +176,11 @@ function logActivity(
   note: string,
   author: string
 ): Task {
-  const raw = readRaw(vaultRoot, slug, id);
-  mutate(raw.frontmatter);
-  raw.frontmatter.updated = new Date().toISOString();
-  raw.activity.push({ timestamp: raw.frontmatter.updated, author, note });
-  write(vaultRoot, slug, raw);
+  const raw = mutateTask(vaultRoot, slug, id, (raw) => {
+    mutate(raw.frontmatter);
+    raw.frontmatter.updated = new Date().toISOString();
+    raw.activity.push({ timestamp: raw.frontmatter.updated, author, note });
+  });
   syncParentSubtasksSection(vaultRoot, slug, raw.frontmatter.parent);
   return readTask(vaultRoot, slug, id);
 }
@@ -196,18 +220,18 @@ export function updateDescription(
   summary: string,
   author = "agent"
 ): Task {
-  const raw = readRaw(vaultRoot, slug, id);
-  raw.frontmatter.version += 1;
-  raw.frontmatter.updated = new Date().toISOString();
-  raw.updates.push({
-    version: raw.frontmatter.version,
-    timestamp: raw.frontmatter.updated,
-    author,
-    summary: summary || "Описание обновлено.",
-    description: newDescription,
+  mutateTask(vaultRoot, slug, id, (raw) => {
+    raw.frontmatter.version += 1;
+    raw.frontmatter.updated = new Date().toISOString();
+    raw.updates.push({
+      version: raw.frontmatter.version,
+      timestamp: raw.frontmatter.updated,
+      author,
+      summary: summary || "Описание обновлено.",
+      description: newDescription,
+    });
+    raw.description = newDescription;
   });
-  raw.description = newDescription;
-  write(vaultRoot, slug, raw);
   return readTask(vaultRoot, slug, id);
 }
 
@@ -235,10 +259,10 @@ export function addComment(
   text: string,
   author: string
 ): Task {
-  const raw = readRaw(vaultRoot, slug, id);
-  raw.frontmatter.updated = new Date().toISOString();
-  raw.comments.push({ timestamp: raw.frontmatter.updated, author, text });
-  write(vaultRoot, slug, raw);
+  mutateTask(vaultRoot, slug, id, (raw) => {
+    raw.frontmatter.updated = new Date().toISOString();
+    raw.comments.push({ timestamp: raw.frontmatter.updated, author, text });
+  });
   return readTask(vaultRoot, slug, id);
 }
 
@@ -257,17 +281,20 @@ export function createSubtask(
  * not leave orphans floating around). Resyncs the former parent's subtask list.
  */
 export function deleteTask(vaultRoot: string, slug: string, id: string): void {
-  const raw = readRaw(vaultRoot, slug, id);
-  const parentId = raw.frontmatter.parent;
+  const parentId = withFileLock(taskFile(vaultRoot, slug, id), () => {
+    const raw = readRaw(vaultRoot, slug, id);
 
-  const children = listTaskFiles(vaultRoot, slug)
-    .map((f) => parseTaskFile(fs.readFileSync(f, "utf8")).frontmatter)
-    .filter((fm) => fm.parent === id);
-  for (const child of children) {
-    deleteTask(vaultRoot, slug, child.id);
-  }
+    const children = listTaskFiles(vaultRoot, slug)
+      .map((f) => parseTaskFile(fs.readFileSync(f, "utf8")).frontmatter)
+      .filter((fm) => fm.parent === id);
+    for (const child of children) {
+      deleteTask(vaultRoot, slug, child.id);
+    }
 
-  fs.unlinkSync(taskFile(vaultRoot, slug, id));
+    fs.unlinkSync(taskFile(vaultRoot, slug, id));
+    return raw.frontmatter.parent;
+  });
+
   syncParentSubtasksSection(vaultRoot, slug, parentId);
 }
 

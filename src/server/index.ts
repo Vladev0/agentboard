@@ -3,12 +3,13 @@ import fastifyStatic from "@fastify/static";
 import fastifyWebsocket from "@fastify/websocket";
 import Fastify from "fastify";
 import { VaultCache } from "../core/cache.js";
-import { getVaultRoot } from "../core/vault.js";
+import { cleanupStaleArtifacts, getVaultRoot } from "../core/vault.js";
 import { VaultWatcher } from "../core/watcher.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 
 const vaultRoot = getVaultRoot();
+cleanupStaleArtifacts(vaultRoot);
 const cache = new VaultCache(vaultRoot);
 cache.buildAll();
 
