@@ -9,12 +9,17 @@ export default function App() {
   const init = useStore((s) => s.init);
   const onVaultEvent = useStore((s) => s.onVaultEvent);
   const selectedTaskId = useStore((s) => s.selectedTaskId);
+  const locale = useStore((s) => s.locale);
 
   useEffect(() => {
     init();
     vaultSocket.connect();
     return vaultSocket.subscribe(onVaultEvent);
   }, [init, onVaultEvent]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-neutral-900 dark:bg-[#08090a] dark:text-neutral-100">

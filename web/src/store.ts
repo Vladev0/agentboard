@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { api } from "./api.js";
-import type { Project, Task, TaskSummary, VaultChangeEvent } from "./types.js";
+import type { Locale, Project, Task, TaskSummary, VaultChangeEvent } from "./types.js";
+
+function detectDefaultLocale(): Locale {
+  const lang = navigator.language.toLowerCase();
+  if (lang.startsWith("ru")) return "ru";
+  if (lang.startsWith("es")) return "es";
+  return "en";
+}
 
 interface State {
   projects: Project[];
@@ -10,6 +17,7 @@ interface State {
   selectedTask: Task | null;
   sidebarCollapsed: boolean;
   loadingTasks: boolean;
+  locale: Locale;
 
   init: () => Promise<void>;
   selectProject: (slug: string) => Promise<void>;
@@ -18,6 +26,7 @@ interface State {
   openTask: (id: string) => Promise<void>;
   closeTask: () => void;
   toggleSidebar: () => void;
+  setLocale: (locale: Locale) => void;
   onVaultEvent: (event: VaultChangeEvent) => void;
 
   createProject: (name: string, key?: string) => Promise<void>;
@@ -30,6 +39,12 @@ interface State {
 }
 
 const SIDEBAR_KEY = "agentboard.sidebarCollapsed";
+const LOCALE_KEY = "agentboard.locale";
+
+function loadStoredLocale(): Locale {
+  const stored = localStorage.getItem(LOCALE_KEY);
+  return stored === "en" || stored === "es" || stored === "ru" ? stored : detectDefaultLocale();
+}
 
 export const useStore = create<State>((set, get) => ({
   projects: [],
@@ -39,6 +54,7 @@ export const useStore = create<State>((set, get) => ({
   selectedTask: null,
   sidebarCollapsed: localStorage.getItem(SIDEBAR_KEY) === "1",
   loadingTasks: false,
+  locale: loadStoredLocale(),
 
   init: async () => {
     const projects = await api.listProjects();
@@ -80,6 +96,11 @@ export const useStore = create<State>((set, get) => ({
       localStorage.setItem(SIDEBAR_KEY, next ? "1" : "0");
       return { sidebarCollapsed: next };
     }),
+
+  setLocale: (locale) => {
+    localStorage.setItem(LOCALE_KEY, locale);
+    set({ locale });
+  },
 
   onVaultEvent: (event) => {
     const { selectedSlug, selectedTaskId } = get();

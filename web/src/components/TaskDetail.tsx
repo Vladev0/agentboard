@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { PRIORITY_DOT_CLASSES, PRIORITY_LABELS, STATUS_DOT_CLASSES } from "../colors.js";
+import { PRIORITY_DOT_CLASSES, STATUS_DOT_CLASSES } from "../colors.js";
+import { cap, priorityLabels, useT } from "../i18n.js";
 import { useStore } from "../store.js";
 import type { Priority, Task } from "../types.js";
 import { api } from "../api.js";
 
-function formatTime(iso: string): string {
+const DATE_LOCALES: Record<string, string> = { en: "en-US", es: "es-ES", ru: "ru-RU" };
+
+function formatTime(iso: string, locale: string): string {
   try {
-    return new Date(iso).toLocaleString("ru-RU", {
+    return new Date(iso).toLocaleString(DATE_LOCALES[locale] ?? "en-US", {
       day: "2-digit",
       month: "2-digit",
       hour: "2-digit",
@@ -17,23 +20,15 @@ function formatTime(iso: string): string {
   }
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, t: ReturnType<typeof useT>): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.round(diffMs / 60000);
-  if (minutes < 1) return "только что";
-  if (minutes < 60) return `${minutes} ${pluralize(minutes, "минуту", "минуты", "минут")} назад`;
+  if (minutes < 1) return t.justNow;
+  if (minutes < 60) return t.minutesAgo(minutes);
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} ${pluralize(hours, "час", "часа", "часов")} назад`;
+  if (hours < 24) return t.hoursAgo(hours);
   const days = Math.round(hours / 24);
-  return `${days} ${pluralize(days, "день", "дня", "дней")} назад`;
-}
-
-function pluralize(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-  return many;
+  return t.daysAgo(days);
 }
 
 /**
@@ -41,17 +36,17 @@ function pluralize(n: number, one: string, few: string, many: string): string {
  * comments/activity a big update distills. Returns null for the very first
  * update (task creation), where there's nothing to summarize yet.
  */
-function describeActivitySince(task: Task, sinceIso: string | undefined, untilIso: string): string | null {
+function describeActivitySince(
+  task: Task,
+  sinceIso: string | undefined,
+  untilIso: string,
+  t: ReturnType<typeof useT>
+): string | null {
   if (!sinceIso) return null;
   const inWindow = (ts: string) => ts > sinceIso && ts <= untilIso;
   const comments = task.comments.filter((c) => inWindow(c.timestamp)).length;
   const activity = task.activity.filter((a) => inWindow(a.timestamp)).length;
-
-  const parts: string[] = [];
-  if (comments > 0) parts.push(`${comments} ${pluralize(comments, "комментарий", "комментария", "комментариев")}`);
-  if (activity > 0) parts.push(`${activity} ${pluralize(activity, "действие", "действия", "действий")}`);
-  if (!parts.length) return null;
-  return `с прошлого апдейта: ${parts.join(", ")}`;
+  return t.sinceLastUpdate(comments, activity);
 }
 
 type Tab = "overview" | "updates";
@@ -59,6 +54,7 @@ type Tab = "overview" | "updates";
 export function TaskDetail() {
   const task = useStore((s) => s.selectedTask);
   const project = useStore((s) => s.projects.find((p) => p.slug === s.selectedSlug));
+  const locale = useStore((s) => s.locale);
   const closeTask = useStore((s) => s.closeTask);
   const setStatus = useStore((s) => s.setStatus);
   const setDescription = useStore((s) => s.setDescription);
@@ -72,6 +68,8 @@ export function TaskDetail() {
       ? s.tasksBySlug[s.selectedSlug]?.find((t) => t.id === task.parent)
       : undefined
   );
+  const t = useT();
+  const labels = priorityLabels(t);
 
   const [tab, setTab] = useState<Tab>("overview");
   const [descDraft, setDescDraft] = useState("");
@@ -125,14 +123,12 @@ export function TaskDetail() {
   }
 
   function deleteSubtask(sub: { id: string; title: string }) {
-    if (!confirm(`Удалить подзадачу «${sub.title}» безвозвратно?`)) return;
+    if (!confirm(t.confirmDeleteSubtask(sub.title))) return;
     deleteTask(sub.id);
   }
 
   function deleteCurrentTask() {
-    const label = task!.parent ? "подзадачу" : "задачу";
-    const extra = task!.subtasks.length > 0 ? ` вместе с ${task!.subtasks.length} подзадачами` : "";
-    if (!confirm(`Удалить ${label} «${task!.title}»${extra} безвозвратно?`)) return;
+    if (!confirm(t.confirmDeleteTask(task!.title, Boolean(task!.parent), task!.subtasks.length))) return;
     deleteTask(task!.id);
   }
 
@@ -150,7 +146,7 @@ export function TaskDetail() {
               <>
                 <button
                   onClick={() => openTask(task.parent!)}
-                  title="Вернуться к родительской задаче"
+                  title={t.backToParentTitle}
                   className="flex min-w-0 shrink-0 items-center gap-1 rounded px-1.5 py-0.5 font-medium text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800"
                 >
                   <span>←</span>
@@ -167,21 +163,21 @@ export function TaskDetail() {
             <span className="truncate font-medium text-neutral-500 dark:text-neutral-300">{task.id}</span>
             {task.parent && (
               <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                Подзадача
+                {t.subtaskBadge}
               </span>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button
               onClick={deleteCurrentTask}
-              title="Удалить задачу"
+              title={t.deleteTaskTooltip}
               className="rounded px-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
             >
               🗑
             </button>
             <button
               onClick={closeTask}
-              title="Закрыть"
+              title={t.closeTooltip}
               className="rounded px-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800"
             >
               ✕
@@ -211,7 +207,7 @@ export function TaskDetail() {
                 onChange={(e) => togglePriority(e.target.value as Priority)}
                 className="rounded-md border border-neutral-200 bg-transparent px-2 py-1 text-[12px] outline-none dark:border-neutral-700"
               >
-                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                {Object.entries(labels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -220,7 +216,7 @@ export function TaskDetail() {
 
               <span className="flex items-center gap-1 text-[11px] text-neutral-400">
                 <span className={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT_CLASSES[task.priority]}`} />
-                {task.assignee === "agent" ? "Агент" : "Человек"}
+                {cap(task.assignee === "agent" ? t.roleAgent : t.roleHuman)}
               </span>
             </div>
 
@@ -229,8 +225,11 @@ export function TaskDetail() {
                 onClick={() => setTab("updates")}
                 className="mb-4 text-[11px] text-neutral-400 hover:text-accent hover:underline"
               >
-                Обновлено {formatRelative(latestUpdate.timestamp)} ·{" "}
-                {latestUpdate.author === "agent" ? "агент" : "человек"} · v{task.version}
+                {t.updatedAgo(
+                  formatRelative(latestUpdate.timestamp, t),
+                  latestUpdate.author === "agent" ? t.roleAgent : t.roleHuman,
+                  task.version
+                )}
               </button>
             )}
 
@@ -243,7 +242,7 @@ export function TaskDetail() {
                     : "border-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 }`}
               >
-                Обзор
+                {t.tabOverview}
               </button>
               <button
                 onClick={() => setTab("updates")}
@@ -253,7 +252,7 @@ export function TaskDetail() {
                     : "border-transparent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 }`}
               >
-                Апдейты ({task.updates.length})
+                {t.tabUpdates(task.updates.length)}
               </button>
             </div>
 
@@ -264,7 +263,7 @@ export function TaskDetail() {
                     value={descDraft}
                     onChange={(e) => setDescDraft(e.target.value)}
                     rows={12}
-                    placeholder="Опишите задачу — от короткого резюме до подробной спецификации…"
+                    placeholder={t.descriptionPlaceholder}
                     className="w-full min-h-[280px] resize-y rounded-lg border border-neutral-200 bg-transparent px-3.5 py-3 text-[14.5px] leading-relaxed outline-none focus:border-accent dark:border-neutral-700"
                   />
                   {descriptionDirty && (
@@ -272,7 +271,7 @@ export function TaskDetail() {
                       <input
                         value={summaryDraft}
                         onChange={(e) => setSummaryDraft(e.target.value)}
-                        placeholder="Коротко: что и почему изменилось (необязательно)"
+                        placeholder={t.summaryPlaceholder}
                         className="rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-[12px] outline-none focus:border-accent dark:border-neutral-700"
                       />
                       <div className="flex gap-2">
@@ -280,7 +279,7 @@ export function TaskDetail() {
                           onClick={saveDescription}
                           className="rounded-md bg-accent px-2.5 py-1 text-[12px] font-medium text-white hover:bg-accent-hover"
                         >
-                          Сохранить как апдейт
+                          {t.saveAsUpdateButton}
                         </button>
                         <button
                           onClick={() => {
@@ -289,7 +288,7 @@ export function TaskDetail() {
                           }}
                           className="rounded-md px-2.5 py-1 text-[12px] text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         >
-                          Отмена
+                          {t.cancelButton}
                         </button>
                       </div>
                     </div>
@@ -298,9 +297,7 @@ export function TaskDetail() {
 
                 <section className="mb-6">
                   <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                    Подзадачи{" "}
-                    {task.subtasks.length > 0 &&
-                      `(${task.subtasks.filter((s) => s.done).length}/${task.subtasks.length})`}
+                    {t.subtasksHeading(task.subtasks.filter((s) => s.done).length, task.subtasks.length)}
                   </h2>
                   <div className="flex flex-col gap-1">
                     {task.subtasks.map((sub) => (
@@ -338,7 +335,7 @@ export function TaskDetail() {
                         </button>
                         <button
                           onClick={() => deleteSubtask(sub)}
-                          title="Удалить подзадачу"
+                          title={t.deleteSubtaskTooltip}
                           className="shrink-0 rounded px-1 text-neutral-300 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                         >
                           ✕
@@ -358,7 +355,7 @@ export function TaskDetail() {
                     <input
                       value={subtaskDraft}
                       onChange={(e) => setSubtaskDraft(e.target.value)}
-                      placeholder="+ подзадача"
+                      placeholder={t.addSubtaskPlaceholder}
                       className="flex-1 rounded-md border border-neutral-200 bg-transparent px-2 py-1 text-[12px] outline-none focus:border-accent dark:border-neutral-700"
                     />
                   </form>
@@ -366,7 +363,7 @@ export function TaskDetail() {
 
                 <section>
                   <h2 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-                    Комментарии
+                    {t.commentsHeading}
                   </h2>
                   <div className="flex flex-col gap-3">
                     {task.comments.map((c, i) => (
@@ -376,15 +373,15 @@ export function TaskDetail() {
                       >
                         <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-neutral-400">
                           <span className="font-medium text-neutral-500 dark:text-neutral-300">
-                            {c.author === "agent" ? "Агент" : c.author === "human" ? "Вы" : c.author}
+                            {c.author === "agent" ? cap(t.roleAgent) : c.author === "human" ? t.roleYou : c.author}
                           </span>
-                          <span>{formatTime(c.timestamp)}</span>
+                          <span>{formatTime(c.timestamp, locale)}</span>
                         </div>
                         <div className="whitespace-pre-wrap">{c.text}</div>
                       </div>
                     ))}
                     {task.comments.length === 0 && (
-                      <p className="text-[12px] text-neutral-300">Пока нет комментариев.</p>
+                      <p className="text-[12px] text-neutral-300">{t.noCommentsYet}</p>
                     )}
                   </div>
                 </section>
@@ -397,7 +394,7 @@ export function TaskDetail() {
                   <div className="flex flex-col gap-1.5">
                     {task.updates.map((u, i) => {
                       const prev = task.updates[i + 1];
-                      const sinceLabel = describeActivitySince(task, prev?.timestamp, u.timestamp);
+                      const sinceLabel = describeActivitySince(task, prev?.timestamp, u.timestamp, t);
                       const expanded = expandedVersions.has(u.version);
                       return (
                         <div key={u.version} className="rounded-md border border-neutral-150 dark:border-neutral-800">
@@ -413,10 +410,10 @@ export function TaskDetail() {
                                 <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
                                   v{u.version}
                                 </span>
-                                <span>{formatTime(u.timestamp)}</span>
+                                <span>{formatTime(u.timestamp, locale)}</span>
                                 <span>·</span>
                                 <span>
-                                  {u.author === "agent" ? "агент" : u.author === "human" ? "человек" : u.author}
+                                  {u.author === "agent" ? t.roleAgent : u.author === "human" ? t.roleHuman : u.author}
                                 </span>
                                 {sinceLabel && (
                                   <>
@@ -432,9 +429,9 @@ export function TaskDetail() {
                           </button>
                           {expanded && (
                             <div className="border-t border-neutral-150 px-2.5 py-2 dark:border-neutral-800">
-                              <div className="mb-1 text-[11px] text-neutral-400">Текст задачи на этот момент:</div>
+                              <div className="mb-1 text-[11px] text-neutral-400">{t.versionSnapshotLabel}</div>
                               <div className="whitespace-pre-wrap rounded-md bg-neutral-50 px-2.5 py-2 text-[12px] text-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300">
-                                {u.description || "(пусто)"}
+                                {u.description || t.emptyPlaceholder}
                               </div>
                             </div>
                           )}
@@ -450,7 +447,7 @@ export function TaskDetail() {
                     className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                   >
                     <span>{activityOpen ? "▾" : "▸"}</span>
-                    <span>Активность ({task.activity.length})</span>
+                    <span>{t.activityHeading(task.activity.length)}</span>
                   </button>
                   {activityOpen && (
                     <div className="flex flex-col gap-1.5">
@@ -459,17 +456,17 @@ export function TaskDetail() {
                         .reverse()
                         .map((a, i) => (
                           <div key={i} className="text-[11px] text-neutral-400">
-                            <span>{formatTime(a.timestamp)}</span>
+                            <span>{formatTime(a.timestamp, locale)}</span>
                             <span> · </span>
                             <span>
-                              {a.author === "agent" ? "агент" : a.author === "human" ? "человек" : a.author}
+                              {a.author === "agent" ? t.roleAgent : a.author === "human" ? t.roleHuman : a.author}
                             </span>
                             <span> · </span>
                             <span>{a.note}</span>
                           </div>
                         ))}
                       {task.activity.length === 0 && (
-                        <p className="text-[11px] text-neutral-300">Пока нет активности.</p>
+                        <p className="text-[11px] text-neutral-300">{t.noActivityYet}</p>
                       )}
                     </div>
                   )}
@@ -492,7 +489,7 @@ export function TaskDetail() {
             <input
               value={commentDraft}
               onChange={(e) => setCommentDraft(e.target.value)}
-              placeholder="Написать комментарий…"
+              placeholder={t.commentInputPlaceholder}
               className="flex-1 rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-[13px] outline-none focus:border-accent dark:border-neutral-700"
             />
             <button
@@ -500,7 +497,7 @@ export function TaskDetail() {
               disabled={!commentDraft.trim()}
               className="rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-accent-hover disabled:opacity-40"
             >
-              Отправить
+              {t.sendButton}
             </button>
           </form>
         )}

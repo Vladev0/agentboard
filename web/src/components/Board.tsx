@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { STATUS_DOT_CLASSES } from "../colors.js";
+import { useT } from "../i18n.js";
 import { useStore } from "../store.js";
 import { NewTaskModal } from "./NewTaskModal.js";
 import { TaskCard } from "./TaskCard.js";
@@ -10,11 +11,12 @@ export function Board() {
   const setStatus = useStore((s) => s.setStatus);
   const [showNewTask, setShowNewTask] = useState(false);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const t = useT();
 
   if (!project) {
     return (
       <div className="flex h-full flex-1 items-center justify-center text-[13px] text-neutral-400">
-        Нет ни одного проекта. Создайте первый в левой панели.
+        {t.noProjectsYet}
       </div>
     );
   }
@@ -26,13 +28,13 @@ export function Board() {
       <div className="flex items-center justify-between border-b border-neutral-150 px-5 py-3 dark:border-neutral-800">
         <div>
           <h1 className="text-[14px] font-semibold">{project.name}</h1>
-          <p className="text-[12px] text-neutral-400">{project.taskCount} задач</p>
+          <p className="text-[12px] text-neutral-400">{t.taskCount(project.taskCount)}</p>
         </div>
         <button
           onClick={() => setShowNewTask(true)}
           className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-white hover:bg-accent-hover"
         >
-          + Задача
+          {t.newTaskButton}
         </button>
       </div>
 
@@ -71,7 +73,7 @@ export function Board() {
                 ))}
                 {columnTasks.length === 0 && (
                   <div className="rounded-md border border-dashed border-neutral-200 px-2.5 py-4 text-center text-[12px] text-neutral-300 dark:border-neutral-800">
-                    Пусто
+                    {t.emptyColumn}
                   </div>
                 )}
               </div>

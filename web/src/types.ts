@@ -1,5 +1,6 @@
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type Assignee = "agent" | "human";
+export type Locale = "en" | "es" | "ru";
 
 export interface StatusDef {
   id: string;

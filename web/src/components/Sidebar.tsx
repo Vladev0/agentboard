@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LOCALES, LOCALE_NAMES, useT } from "../i18n.js";
 import { useStore } from "../store.js";
 import { NewProjectModal } from "./NewProjectModal.js";
 
@@ -8,7 +9,10 @@ export function Sidebar() {
   const projects = useStore((s) => s.projects);
   const selectedSlug = useStore((s) => s.selectedSlug);
   const selectProject = useStore((s) => s.selectProject);
+  const locale = useStore((s) => s.locale);
+  const setLocale = useStore((s) => s.setLocale);
   const [showNewProject, setShowNewProject] = useState(false);
+  const t = useT();
 
   return (
     <div
@@ -20,7 +24,7 @@ export function Sidebar() {
         {!collapsed && <span className="text-[13px] font-semibold tracking-tight">AgentBoard</span>}
         <button
           onClick={toggle}
-          title={collapsed ? "Развернуть панель" : "Свернуть панель"}
+          title={collapsed ? t.expandPanel : t.collapsePanel}
           className="ml-auto flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-200/70 hover:text-neutral-700 dark:hover:bg-neutral-800"
         >
           {collapsed ? "»" : "«"}
@@ -62,12 +66,31 @@ export function Sidebar() {
       <div className="border-t border-neutral-150 p-1.5 dark:border-neutral-800">
         <button
           onClick={() => setShowNewProject(true)}
-          title="Новый проект"
+          title={t.newProject}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-neutral-500 hover:bg-neutral-200/60 dark:hover:bg-neutral-800"
         >
           <span className="flex h-5 w-5 shrink-0 items-center justify-center text-[15px] leading-none">+</span>
-          {!collapsed && <span>Новый проект</span>}
+          {!collapsed && <span>{t.newProject}</span>}
         </button>
+
+        {!collapsed && (
+          <div className="mt-1.5 flex gap-1 px-2">
+            {LOCALES.map((l) => (
+              <button
+                key={l}
+                onClick={() => setLocale(l)}
+                title={LOCALE_NAMES[l]}
+                className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                  l === locale
+                    ? "bg-accent/10 text-accent"
+                    : "text-neutral-400 hover:bg-neutral-200/60 dark:hover:bg-neutral-800"
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {showNewProject && <NewProjectModal onClose={() => setShowNewProject(false)} />}

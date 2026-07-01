@@ -13,10 +13,3 @@ export const PRIORITY_DOT_CLASSES: Record<string, string> = {
   high: "bg-orange-500",
   urgent: "bg-red-600",
 };
-
-export const PRIORITY_LABELS: Record<string, string> = {
-  low: "Низкий",
-  medium: "Средний",
-  high: "Высокий",
-  urgent: "Срочный",
-};
