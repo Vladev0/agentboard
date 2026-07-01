@@ -211,7 +211,7 @@ export function TaskDetail() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 md:px-10 md:py-6">
-          <div className="mx-auto w-full max-w-[680px]">
+          <div className="w-full">
             <h1 className="mb-3 text-[20px] font-semibold leading-snug">{task.title}</h1>
 
             <div className="mb-3 flex flex-wrap items-center gap-2">
