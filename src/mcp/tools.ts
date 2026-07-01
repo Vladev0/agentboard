@@ -10,6 +10,7 @@ import {
   listTasks,
   readTask,
   updateDescription,
+  updateFields,
   updateStatus,
 } from "../core/task.js";
 
@@ -88,6 +89,9 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
       title: z.string(),
       description: z.string().optional(),
       priority: priority.optional(),
+      labels: z.array(z.string()).optional(),
+      order: z.number().optional(),
+      blockedBy: z.array(z.string()).optional(),
     },
     async ({ project, parentId, ...input }) =>
       text(createSubtask(vaultRoot, project, parentId, { ...input, author: "agent" }))
@@ -98,6 +102,22 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
     "Изменить статус задачи. Это рутинное событие — попадает в техническую активность задачи, не в её версии-апдейты.",
     { project: z.string(), id: z.string(), status: z.string() },
     async ({ project, id, status }) => text(updateStatus(vaultRoot, project, id, status, "agent"))
+  );
+
+  server.tool(
+    "update_task",
+    "Изменить поля существующей задачи (заголовок, приоритет, метки, порядок, блокировки, исполнителя) без смены статуса и без создания апдейта — это тоже рутинное событие, попадает в техническую активность. Передавайте только те поля, которые меняете.",
+    {
+      project: z.string(),
+      id: z.string(),
+      title: z.string().optional(),
+      priority: priority.optional(),
+      labels: z.array(z.string()).optional(),
+      order: z.number().optional(),
+      blockedBy: z.array(z.string()).optional(),
+      assignee: z.enum(["agent", "human"]).optional(),
+    },
+    async ({ project, id, ...patch }) => text(updateFields(vaultRoot, project, id, patch, "agent"))
   );
 
   server.tool(
