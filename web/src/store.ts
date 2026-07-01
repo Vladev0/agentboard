@@ -26,6 +26,7 @@ interface State {
   setStatus: (id: string, status: string) => Promise<void>;
   setDescription: (id: string, description: string, summary: string) => Promise<void>;
   addComment: (id: string, text: string) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
 }
 
 const SIDEBAR_KEY = "agentboard.sidebarCollapsed";
@@ -132,5 +133,26 @@ export const useStore = create<State>((set, get) => ({
     if (!slug) return;
     await api.addComment(slug, id, text);
     if (get().selectedTaskId === id) await get().openTask(id);
+  },
+
+  deleteTask: async (id) => {
+    const slug = get().selectedSlug;
+    if (!slug) return;
+    const wasSelected = get().selectedTaskId === id;
+    const parentId = wasSelected
+      ? (get().selectedTask?.parent ?? null)
+      : (get().tasksBySlug[slug]?.find((t) => t.id === id)?.parent ?? null);
+
+    await api.deleteTask(slug, id);
+    await get().reloadTasks(slug);
+    await get().reloadProjects();
+
+    if (wasSelected) {
+      if (parentId) await get().openTask(parentId);
+      else get().closeTask();
+    } else if (get().selectedTaskId) {
+      // A subtask of the currently open task was removed — refresh its subtask list.
+      await get().openTask(get().selectedTaskId!);
+    }
   },
 }));

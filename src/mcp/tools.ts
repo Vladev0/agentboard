@@ -5,6 +5,7 @@ import {
   addComment,
   createSubtask,
   createTask,
+  deleteTask,
   getNextTask,
   listTasks,
   readTask,
@@ -112,5 +113,15 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
     "Оставить комментарий в задаче — обсуждение, уточняющий вопрос человеку, промежуточная реплика по ходу работы. Для реального изменения сути задачи (описания) после того как обсуждение к чему-то привело — используйте update_description, а не это.",
     { project: z.string(), id: z.string(), text: z.string() },
     async ({ project, id, text: body }) => text(addComment(vaultRoot, project, id, body, "agent"))
+  );
+
+  server.tool(
+    "delete_task",
+    "Полностью удалить задачу (файл и вся её история) — например, если завели дубликат или подзадача больше не нужна. Каскадно удаляет и все её подзадачи. Необратимо — не для смены статуса, для этого есть update_status.",
+    { project: z.string(), id: z.string() },
+    async ({ project, id }) => {
+      deleteTask(vaultRoot, project, id);
+      return text({ deleted: id });
+    }
   );
 }

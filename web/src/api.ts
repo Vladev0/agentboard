@@ -63,4 +63,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ text, author }),
     }),
+
+  deleteTask: async (slug: string, id: string): Promise<void> => {
+    const res = await fetch(`/api/projects/${slug}/tasks/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`DELETE /api/projects/${slug}/tasks/${id} failed: ${res.status} ${body}`);
+    }
+  },
 };

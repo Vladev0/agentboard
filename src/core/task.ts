@@ -252,6 +252,26 @@ export function createSubtask(
 }
 
 /**
+ * Deletes a task and, cascading, all of its subtasks (a subtask acts as a
+ * checklist-item substitute — removing the group should remove what's under it,
+ * not leave orphans floating around). Resyncs the former parent's subtask list.
+ */
+export function deleteTask(vaultRoot: string, slug: string, id: string): void {
+  const raw = readRaw(vaultRoot, slug, id);
+  const parentId = raw.frontmatter.parent;
+
+  const children = listTaskFiles(vaultRoot, slug)
+    .map((f) => parseTaskFile(fs.readFileSync(f, "utf8")).frontmatter)
+    .filter((fm) => fm.parent === id);
+  for (const child of children) {
+    deleteTask(vaultRoot, slug, child.id);
+  }
+
+  fs.unlinkSync(taskFile(vaultRoot, slug, id));
+  syncParentSubtasksSection(vaultRoot, slug, parentId);
+}
+
+/**
  * Recommends the next actionable task so an agent doesn't have to scan the whole project:
  * unblocked, not in the terminal status, lowest `order` first, ties broken by priority.
  */
@@ -270,7 +290,11 @@ export function getNextTask(
   const candidates = all.filter((fm) => {
     if (fm.parent !== parent) return false;
     if (fm.status === terminal) return false;
-    const blocked = fm.blockedBy.some((bId) => byId.get(bId)?.status !== terminal);
+    const blocked = fm.blockedBy.some((bId) => {
+      const blocker = byId.get(bId);
+      // A blocker that no longer exists (e.g. deleted) can't be blocking anything.
+      return blocker !== undefined && blocker.status !== terminal;
+    });
     return !blocked;
   });
 

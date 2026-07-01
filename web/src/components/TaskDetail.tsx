@@ -64,6 +64,7 @@ export function TaskDetail() {
   const setDescription = useStore((s) => s.setDescription);
   const addComment = useStore((s) => s.addComment);
   const createSubtask = useStore((s) => s.createSubtask);
+  const deleteTask = useStore((s) => s.deleteTask);
   const openTask = useStore((s) => s.openTask);
   const selectedSlug = useStore((s) => s.selectedSlug);
   const parentSummary = useStore((s) =>
@@ -123,6 +124,18 @@ export function TaskDetail() {
     setSummaryDraft("");
   }
 
+  function deleteSubtask(sub: { id: string; title: string }) {
+    if (!confirm(`Удалить подзадачу «${sub.title}» безвозвратно?`)) return;
+    deleteTask(sub.id);
+  }
+
+  function deleteCurrentTask() {
+    const label = task!.parent ? "подзадачу" : "задачу";
+    const extra = task!.subtasks.length > 0 ? ` вместе с ${task!.subtasks.length} подзадачами` : "";
+    if (!confirm(`Удалить ${label} «${task!.title}»${extra} безвозвратно?`)) return;
+    deleteTask(task!.id);
+  }
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-0 md:p-10"
@@ -158,13 +171,22 @@ export function TaskDetail() {
               </span>
             )}
           </div>
-          <button
-            onClick={closeTask}
-            title="Закрыть"
-            className="shrink-0 rounded px-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800"
-          >
-            ✕
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={deleteCurrentTask}
+              title="Удалить задачу"
+              className="rounded px-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+            >
+              🗑
+            </button>
+            <button
+              onClick={closeTask}
+              title="Закрыть"
+              className="rounded px-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 md:px-10 md:py-6">
@@ -284,7 +306,7 @@ export function TaskDetail() {
                     {task.subtasks.map((sub) => (
                       <div
                         key={sub.id}
-                        className="flex items-center gap-2 rounded-md px-1.5 py-1 text-[13px] hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        className="group flex items-center gap-2 rounded-md px-1.5 py-1 text-[13px] hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
                         <select
                           value={sub.status}
@@ -313,6 +335,13 @@ export function TaskDetail() {
                           <span className={`truncate ${sub.done ? "text-neutral-400 line-through" : ""}`}>
                             {sub.title}
                           </span>
+                        </button>
+                        <button
+                          onClick={() => deleteSubtask(sub)}
+                          title="Удалить подзадачу"
+                          className="shrink-0 rounded px-1 text-neutral-300 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                        >
+                          ✕
                         </button>
                       </div>
                     ))}

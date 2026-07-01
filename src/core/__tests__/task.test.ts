@@ -7,6 +7,7 @@ import {
   addComment,
   createSubtask,
   createTask,
+  deleteTask,
   getNextTask,
   listTasks,
   readTask,
@@ -123,6 +124,46 @@ describe("task lifecycle round-trip", () => {
     expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t1.id);
 
     updateStatus(vaultRoot, project.slug, t1.id, "done");
+    expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t2.id);
+  });
+
+  it("deletes a task and syncs the former parent's subtask list", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const parent = createTask(vaultRoot, project.slug, { title: "Parent" });
+    const child = createSubtask(vaultRoot, project.slug, parent.id, { title: "Child" });
+
+    deleteTask(vaultRoot, project.slug, child.id);
+
+    expect(() => readTask(vaultRoot, project.slug, child.id)).toThrow();
+    const reloadedParent = readTask(vaultRoot, project.slug, parent.id);
+    expect(reloadedParent.subtasks).toHaveLength(0);
+  });
+
+  it("cascades delete to all descendants (subtask acts as a checklist group)", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const parent = createTask(vaultRoot, project.slug, { title: "Parent" });
+    const child = createSubtask(vaultRoot, project.slug, parent.id, { title: "Child" });
+    const grandchild = createSubtask(vaultRoot, project.slug, child.id, { title: "Grandchild" });
+
+    deleteTask(vaultRoot, project.slug, child.id);
+
+    expect(() => readTask(vaultRoot, project.slug, child.id)).toThrow();
+    expect(() => readTask(vaultRoot, project.slug, grandchild.id)).toThrow();
+    const summaries = listTasks(vaultRoot, project.slug);
+    expect(summaries.map((s) => s.id)).toEqual([parent.id]);
+  });
+
+  it("treats a deleted blocker as resolved instead of blocking forever", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const t1 = createTask(vaultRoot, project.slug, { title: "Blocker", order: 10 });
+    const t2 = createTask(vaultRoot, project.slug, {
+      title: "Blocked",
+      order: 20,
+      blockedBy: [t1.id],
+    });
+
+    deleteTask(vaultRoot, project.slug, t1.id);
+
     expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t2.id);
   });
 

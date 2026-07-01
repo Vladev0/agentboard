@@ -4,6 +4,7 @@ import {
   addComment,
   createSubtask,
   createTask,
+  deleteTask,
   getNextTask,
   readTask,
   updateDescription,
@@ -120,6 +121,20 @@ export async function registerTaskRoutes(app: FastifyInstance): Promise<void> {
       const task = addComment(app.vaultRoot, req.params.slug, req.params.id, body.text, body.author);
       app.cache.refreshProject(req.params.slug);
       reply.code(201).send(task);
+    }
+  );
+
+  app.delete<{ Params: { slug: string; id: string } }>(
+    "/api/projects/:slug/tasks/:id",
+    async (req, reply) => {
+      try {
+        deleteTask(app.vaultRoot, req.params.slug, req.params.id);
+      } catch {
+        reply.code(404).send({ error: "not_found" });
+        return;
+      }
+      app.cache.refreshProject(req.params.slug);
+      reply.code(204).send();
     }
   );
 }
