@@ -24,15 +24,15 @@ export function Board() {
   const topLevel = tasks.filter((t) => !t.parent);
 
   return (
-    <div className="flex h-full flex-1 flex-col">
+    <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className="flex items-center justify-between border-b border-neutral-150 px-5 py-3 dark:border-neutral-800">
-        <div>
-          <h1 className="text-[14px] font-semibold">{project.name}</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-[14px] font-semibold">{project.name}</h1>
           <p className="text-[12px] text-neutral-400">{t.taskCount(project.taskCount)}</p>
         </div>
         <button
           onClick={() => setShowNewTask(true)}
-          className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-white hover:bg-accent-hover"
+          className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-white hover:bg-accent-hover"
         >
           {t.newTaskButton}
         </button>
