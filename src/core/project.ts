@@ -70,4 +70,9 @@ export function projectExists(vaultRoot: string, slug: string): boolean {
   }
 }
 
+/** Deletes an entire project — its config and every task file. Irreversible. */
+export function deleteProject(vaultRoot: string, slug: string): void {
+  fs.rmSync(projectDir(vaultRoot, slug), { recursive: true, force: true });
+}
+
 export { projectDir };

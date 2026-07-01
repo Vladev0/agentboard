@@ -25,6 +25,8 @@ interface Dictionary {
   expandPanel: string;
   collapsePanel: string;
   newProject: string;
+  deleteProjectTooltip: string;
+  confirmDeleteProject: (name: string) => string;
   needsAttentionTooltip: (n: number) => string;
   noProjectsYet: string;
   connectionErrorTitle: string;
@@ -93,12 +95,19 @@ interface Dictionary {
 
   commentInputPlaceholder: string;
   sendButton: string;
+
+  // Translated labels for the built-in default statuses only — a custom status a human
+  // typed themselves (e.g. "Waiting on legal") is project data, not app chrome, and can't
+  // be auto-translated. Keyed by the status `id` from DEFAULT_STATUSES.
+  statusLabels: Record<string, string>;
 }
 
 const en: Dictionary = {
   expandPanel: "Expand panel",
   collapsePanel: "Collapse panel",
   newProject: "New project",
+  deleteProjectTooltip: "Delete project",
+  confirmDeleteProject: (name) => `Delete project "${name}" and all its tasks permanently?`,
   needsAttentionTooltip: (n) => `${n} ${n === 1 ? "task needs" : "tasks need"} your input`,
   noProjectsYet: "No projects yet. Create the first one in the left panel.",
   connectionErrorTitle: "Can't reach the server",
@@ -175,12 +184,23 @@ const en: Dictionary = {
 
   commentInputPlaceholder: "Write a comment…",
   sendButton: "Send",
+
+  statusLabels: {
+    backlog: "Backlog",
+    todo: "Todo",
+    in_progress: "In Progress",
+    needs_input: "Needs Input",
+    in_review: "In Review",
+    done: "Done",
+  },
 };
 
 const es: Dictionary = {
   expandPanel: "Expandir panel",
   collapsePanel: "Contraer panel",
   newProject: "Nuevo proyecto",
+  deleteProjectTooltip: "Eliminar proyecto",
+  confirmDeleteProject: (name) => `¿Eliminar el proyecto «${name}» y todas sus tareas de forma permanente?`,
   needsAttentionTooltip: (n) => `${n} ${n === 1 ? "tarea necesita" : "tareas necesitan"} tu atención`,
   noProjectsYet: "Aún no hay proyectos. Crea el primero en el panel izquierdo.",
   connectionErrorTitle: "No se puede conectar con el servidor",
@@ -257,12 +277,23 @@ const es: Dictionary = {
 
   commentInputPlaceholder: "Escribe un comentario…",
   sendButton: "Enviar",
+
+  statusLabels: {
+    backlog: "Pendientes",
+    todo: "Por hacer",
+    in_progress: "En curso",
+    needs_input: "Necesita respuesta",
+    in_review: "En revisión",
+    done: "Hecho",
+  },
 };
 
 const ru: Dictionary = {
   expandPanel: "Развернуть панель",
   collapsePanel: "Свернуть панель",
   newProject: "Новый проект",
+  deleteProjectTooltip: "Удалить проект",
+  confirmDeleteProject: (name) => `Удалить проект «${name}» и все его задачи безвозвратно?`,
   needsAttentionTooltip: (n) =>
     `${n} ${ruPlural(n, "задача", "задачи", "задач")} ${n === 1 ? "ждёт" : "ждут"} вашего внимания`,
   noProjectsYet: "Нет ни одного проекта. Создайте первый в левой панели.",
@@ -340,6 +371,15 @@ const ru: Dictionary = {
 
   commentInputPlaceholder: "Написать комментарий…",
   sendButton: "Отправить",
+
+  statusLabels: {
+    backlog: "Бэклог",
+    todo: "К выполнению",
+    in_progress: "В работе",
+    needs_input: "Нужен ответ",
+    in_review: "На проверке",
+    done: "Готово",
+  },
 };
 
 const dictionaries: Record<Locale, Dictionary> = { en, es, ru };
@@ -351,4 +391,13 @@ export function useT(): Dictionary {
 
 export function priorityLabels(t: Dictionary): Record<Priority, string> {
   return { low: t.priorityLow, medium: t.priorityMedium, high: t.priorityHigh, urgent: t.priorityUrgent };
+}
+
+/**
+ * Translates a status name if it's one of the built-in defaults (by `id`); falls back to
+ * the literal `name` for a custom status a human typed themselves, which is project data
+ * and can't be auto-translated.
+ */
+export function statusLabel(t: Dictionary, status: { id: string; name: string }): string {
+  return t.statusLabels[status.id] ?? status.name;
 }

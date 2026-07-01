@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { createProject, listProjects } from "../core/project.js";
+import { createProject, deleteProject, listProjects } from "../core/project.js";
 import {
   addComment,
   createSubtask,
@@ -42,6 +42,16 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
     "Создать новый проект в vault. key — короткий префикс для ID задач (например WEB), генерируется из названия если не указан.",
     { name: z.string(), key: z.string().optional() },
     async ({ name, key }) => text(createProject(vaultRoot, name, { key }))
+  );
+
+  server.tool(
+    "delete_project",
+    "Полностью удалить проект — все его задачи и историю без возможности восстановления. Используйте только по явной просьбе человека, не самостоятельно по догадке.",
+    { project: z.string() },
+    async ({ project }) => {
+      deleteProject(vaultRoot, project);
+      return text({ deleted: project });
+    }
   );
 
   server.tool(

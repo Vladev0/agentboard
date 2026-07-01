@@ -6,6 +6,8 @@
   "license": "MIT",
   "description": "Local kanban task board for humans and AI coding agents, backed by a markdown vault.",
   "scripts": {
+    "setup": "npm install && npm --prefix web install",
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch src/server/index.ts",
     "dev:web": "npm run dev --prefix web",
     "build:web": "npm run build --prefix web",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@types/node": "^20.14.2",
     "@types/ws": "^8.18.1",
+    "concurrently": "^8.2.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
     "vitest": "^2.0.5"

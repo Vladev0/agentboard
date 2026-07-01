@@ -1,10 +1,41 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const CONFIG_FILE_NAME = "agentboard.config.json";
+
+interface AgentBoardConfig {
+  vault?: string;
+  port?: number;
+}
+
+/**
+ * Config file is optional and looked up in the current working directory — it exists so
+ * a vault living outside the repo (e.g. on another drive, or shared between a repo and
+ * its fork) doesn't require setting an env var before every single command. Env vars
+ * still take precedence when set, so scripts/CI can override without touching the file.
+ */
+function loadConfigFile(): AgentBoardConfig {
+  const configPath = path.resolve(process.cwd(), CONFIG_FILE_NAME);
+  if (!fs.existsSync(configPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
 export function getVaultRoot(): string {
-  return process.env.AGENTBOARD_VAULT
-    ? path.resolve(process.env.AGENTBOARD_VAULT)
-    : path.resolve(process.cwd(), "vault");
+  if (process.env.AGENTBOARD_VAULT) return path.resolve(process.env.AGENTBOARD_VAULT);
+  const config = loadConfigFile();
+  if (config.vault) return path.resolve(config.vault);
+  return path.resolve(process.cwd(), "vault");
+}
+
+export function getConfiguredPort(defaultPort: number): number {
+  if (process.env.PORT) return Number(process.env.PORT);
+  const config = loadConfigFile();
+  if (config.port) return config.port;
+  return defaultPort;
 }
 
 export function projectsDir(vaultRoot: string): string {

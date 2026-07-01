@@ -9,11 +9,17 @@ export function Sidebar() {
   const projects = useStore((s) => s.projects);
   const selectedSlug = useStore((s) => s.selectedSlug);
   const selectProject = useStore((s) => s.selectProject);
+  const deleteProject = useStore((s) => s.deleteProject);
   const locale = useStore((s) => s.locale);
   const setLocale = useStore((s) => s.setLocale);
   const [showNewProject, setShowNewProject] = useState(false);
   const t = useT();
   const attentionTotal = needsAttentionCount(projects);
+
+  function handleDeleteProject(slug: string, name: string) {
+    if (!confirm(t.confirmDeleteProject(name))) return;
+    deleteProject(slug);
+  }
 
   return (
     <div
@@ -49,11 +55,11 @@ export function Sidebar() {
           const active = project.slug === selectedSlug;
           const attention = projectNeedsAttentionCount(project);
           return (
-            <button
+            <div
               key={project.slug}
               onClick={() => selectProject(project.slug)}
               title={attention > 0 ? `${project.name} — ${t.needsAttentionTooltip(attention)}` : project.name}
-              className={`group relative mb-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
+              className={`group relative mb-0.5 flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
                 active
                   ? "bg-accent/10 text-accent"
                   : "text-neutral-600 hover:bg-neutral-200/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -72,10 +78,20 @@ export function Sidebar() {
               {!collapsed && (
                 <>
                   <span className="flex-1 truncate">{project.name}</span>
-                  <span className="text-[11px] text-neutral-400">{project.taskCount}</span>
+                  <span className="text-[11px] text-neutral-400 group-hover:hidden">{project.taskCount}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteProject(project.slug, project.name);
+                    }}
+                    title={t.deleteProjectTooltip}
+                    className="hidden shrink-0 rounded px-1 text-neutral-400 hover:bg-red-50 hover:text-red-600 group-hover:block dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                  >
+                    ✕
+                  </button>
                 </>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

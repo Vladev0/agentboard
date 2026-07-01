@@ -3,7 +3,7 @@ import fastifyStatic from "@fastify/static";
 import fastifyWebsocket from "@fastify/websocket";
 import Fastify from "fastify";
 import { VaultCache } from "../core/cache.js";
-import { cleanupStaleArtifacts, getVaultRoot } from "../core/vault.js";
+import { cleanupStaleArtifacts, getConfiguredPort, getVaultRoot } from "../core/vault.js";
 import { VaultWatcher } from "../core/watcher.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
@@ -48,7 +48,7 @@ app.setNotFoundHandler((req, reply) => {
   reply.sendFile("index.html");
 });
 
-const port = Number(process.env.PORT ?? 4173);
+const port = getConfiguredPort(4173);
 app.listen({ port, host: "127.0.0.1" }).then(() => {
   app.log.info(`AgentBoard vault: ${vaultRoot}`);
 });

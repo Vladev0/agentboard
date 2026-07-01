@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { createProject } from "../../core/project.js";
+import { createProject, deleteProject } from "../../core/project.js";
 
 const createProjectSchema = z.object({
   name: z.string().min(1),
@@ -23,5 +23,11 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
     const project = createProject(app.vaultRoot, body.name, { key: body.key });
     app.cache.refreshProject(project.slug);
     reply.code(201).send(project);
+  });
+
+  app.delete<{ Params: { slug: string } }>("/api/projects/:slug", async (req, reply) => {
+    deleteProject(app.vaultRoot, req.params.slug);
+    app.cache.removeProject(req.params.slug);
+    reply.code(204).send();
   });
 }

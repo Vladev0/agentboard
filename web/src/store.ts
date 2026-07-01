@@ -46,6 +46,7 @@ interface State {
   onVaultEvent: (event: VaultChangeEvent) => void;
 
   createProject: (name: string, key?: string) => Promise<void>;
+  deleteProject: (slug: string) => Promise<void>;
   createTask: (title: string, description?: string, priority?: Task["priority"]) => Promise<void>;
   createSubtask: (parentId: string, title: string) => Promise<void>;
   setStatus: (id: string, status: string) => Promise<void>;
@@ -140,6 +141,22 @@ export const useStore = create<State>((set, get) => ({
     const project = await api.createProject(name, key);
     await get().reloadProjects();
     await get().selectProject(project.slug);
+  },
+
+  deleteProject: async (slug) => {
+    await api.deleteProject(slug);
+    const wasSelected = get().selectedSlug === slug;
+    set((s) => {
+      const tasksBySlug = { ...s.tasksBySlug };
+      delete tasksBySlug[slug];
+      return { tasksBySlug };
+    });
+    await get().reloadProjects();
+    if (wasSelected) {
+      const next = get().projects.find((p) => p.slug !== slug);
+      if (next) await get().selectProject(next.slug);
+      else set({ selectedSlug: null, selectedTaskId: null, selectedTask: null });
+    }
   },
 
   createTask: async (title, description, priority) => {

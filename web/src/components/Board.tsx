@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { STATUS_DOT_CLASSES } from "../colors.js";
-import { useT } from "../i18n.js";
+import { statusLabel, useT } from "../i18n.js";
 import { useStore } from "../store.js";
 import { NewTaskModal } from "./NewTaskModal.js";
 import { TaskCard } from "./TaskCard.js";
@@ -60,10 +60,11 @@ export function Board() {
         {project.statuses.map((status) => {
           const columnTasks = topLevel.filter((t) => t.status === status.id);
           const isDragOver = dragOverStatus === status.id;
+          const isEmpty = columnTasks.length === 0;
           return (
             <div
               key={status.id}
-              className="flex w-[272px] shrink-0 flex-col"
+              className={`flex shrink-0 flex-col transition-[width] ${isEmpty ? "w-[132px]" : "w-[272px]"}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOverStatus(status.id);
@@ -78,7 +79,7 @@ export function Board() {
             >
               <div className="mb-2 flex items-center gap-1.5 px-1 text-[12px] font-medium text-neutral-500">
                 <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_CLASSES[status.color] ?? "bg-neutral-400"}`} />
-                <span>{status.name}</span>
+                <span className="truncate">{statusLabel(t, status)}</span>
                 <span className="text-neutral-400">{columnTasks.length}</span>
               </div>
               <div
@@ -89,8 +90,8 @@ export function Board() {
                 {columnTasks.map((task) => (
                   <TaskCard key={task.id} task={task} />
                 ))}
-                {columnTasks.length === 0 && (
-                  <div className="rounded-md border border-dashed border-neutral-200 px-2.5 py-4 text-center text-[12px] text-neutral-300 dark:border-neutral-800">
+                {isEmpty && (
+                  <div className="rounded-md border border-dashed border-neutral-200 px-2 py-3 text-center text-[11px] text-neutral-300 dark:border-neutral-800">
                     {t.emptyColumn}
                   </div>
                 )}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PRIORITY_DOT_CLASSES, STATUS_DOT_CLASSES } from "../colors.js";
-import { cap, priorityLabels, useT } from "../i18n.js";
+import { cap, priorityLabels, statusLabel, useT } from "../i18n.js";
 import { useStore } from "../store.js";
 import type { Priority, Task } from "../types.js";
 import { api } from "../api.js";
@@ -222,7 +222,7 @@ export function TaskDetail() {
               >
                 {project.statuses.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    {statusLabel(t, s)}
                   </option>
                 ))}
               </select>

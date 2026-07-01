@@ -71,4 +71,12 @@ export const api = {
       throw new Error(`DELETE /api/projects/${slug}/tasks/${id} failed: ${res.status} ${body}`);
     }
   },
+
+  deleteProject: async (slug: string): Promise<void> => {
+    const res = await fetch(`/api/projects/${slug}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`DELETE /api/projects/${slug} failed: ${res.status} ${body}`);
+    }
+  },
 };
