@@ -1,175 +1,180 @@
-# AgentBoard — конвенция для агентов
+# AgentBoard — conventions for agents
 
-AgentBoard — трекер задач для человека и AI-агентов поверх обычных markdown-файлов.
-Есть два способа взаимодействовать с задачами: **MCP-инструменты** (основной путь) и
-**прямой доступ к файлам** (fallback, если MCP недоступен). Оба пути пишут в один и тот
-же формат, поэтому файлы остаются целостными независимо от способа записи.
+AgentBoard is a task tracker for humans and AI agents, built on plain markdown files.
+There are two ways to work with tasks: **MCP tools** (the primary path) and **direct file
+access** (a fallback, if MCP isn't available). Both paths write the same format, so files
+stay consistent no matter which one you use.
 
-## Быстрый старт для нового агента
+## Quick start for a new agent
 
-1. `list_projects` — если список пуст, проекта ещё нет: `create_project(name, key?)`, затем
-   `create_task` для первых задач. Если проекты уже есть — выберите нужный по `slug`.
-2. `get_next_task(project)` — не читайте весь список задач, просто спросите, что делать.
-3. По возвращённой задаче — `get_task(project, id)`, чтобы увидеть полное описание, апдейты,
-   комментарии и подзадачи, прежде чем начинать работу.
-4. Работайте (см. таблицу инструментов ниже), логируя апдейты/комментарии по ходу.
-5. Если планируете работать циклами/итерациями без человека на каждом шаге — см. раздел
-   «Протокол для длинных loop/cycle-сессий» ниже, он написан именно для этого случая.
+1. `list_projects` — if the list is empty, there's no project yet: `create_project(name, key?)`,
+   then `create_task` for the first tasks. If projects already exist, pick one by `slug`.
+2. `get_next_task(project)` — don't read the whole task list, just ask what to do.
+3. For the task returned — `get_task(project, id)` to see the full description, updates,
+   comments, and subtasks before starting work.
+4. Work (see the tool table below), logging updates/comments as you go.
+5. Planning to work in cycles/iterations without a human in the loop each time? See
+   "Protocol for long loop/cycle sessions" below — it's written for exactly that case.
 
-## Три разных типа записей в задаче — не путайте их
+## Three different kinds of entries on a task — don't confuse them
 
-| Тип | Где живёт | Когда использовать |
+| Type | Lives in | When to use |
 |---|---|---|
-| **Комментарий** | `## Comments` | Обсуждение, уточняющий вопрос, промежуточная реплика по ходу работы. Не версионируется. |
-| **Апдейт (большой)** | `## Updates`, версии `vN` | Осознанный чекпоинт: суть задачи (описание) переписана после того, как работа/обсуждение к чему-то привели. Обязательно с резюме "что и почему". Версионируется, виден в UI как основная история эволюции задачи. |
-| **Активность** | `## Активность` | Рутинная техническая бухгалтерия: смена статуса, смена приоритета/полей. Генерируется автоматически, не версионируется, в UI свёрнута по умолчанию. |
+| **Comment** | `## Comments` | Discussion, a clarifying question, a passing remark while working. Not versioned. |
+| **Update (big)** | `## Updates`, versions `vN` | A deliberate checkpoint: the task's substance (its description) was rewritten after work/discussion led somewhere. Requires a summary of "what and why." Versioned, shown in the UI as the task's main evolution history. |
+| **Activity** | `## Activity` | Routine technical bookkeeping: status changes, priority/field changes. Generated automatically, not versioned, collapsed in the UI by default. |
 
-Практическое правило: если вы просто отвечаете/уточняете — это комментарий (`add_comment`).
-Если по итогам обсуждения реально меняется суть задачи — это апдейт (`update_description`
-с обязательным `summary`). Никогда не логируйте "апдейт" без изменения описания — для
-этого есть комментарии.
+Practical rule: if you're just replying or clarifying, that's a comment (`add_comment`). If
+the task's actual substance changes as a result of the discussion, that's an update
+(`update_description` with a required `summary`). Never log an "update" without an actual
+description change — that's what comments are for.
 
-## 1. Основной путь — MCP-инструменты
+## 1. Primary path — MCP tools
 
-| Инструмент | Когда использовать |
+| Tool | When to use |
 |---|---|
-| `list_projects` | Узнать, какие проекты есть и сколько в них задач по статусам |
-| `list_tasks(project)` | Быстро посмотреть список задач проекта без лишнего контекста |
-| `get_task(project, id)` | Получить полную карточку конкретной задачи, когда нужны детали |
-| `get_next_task(project, parent?)` | **Начинайте с этого** — вместо того чтобы листать список, спросите, что делать дальше |
-| `create_task` / `create_subtask` | Завести задачу или разбить её на подзадачи |
-| `update_status` | Сменить статус — уходит в техническую активность, не в апдейты |
-| `update_task` | Изменить поля существующей задачи (приоритет, метки, порядок, блокировки, заголовок, исполнителя) — тоже уходит в активность, не в апдейты |
-| `update_description(description, summary)` | **Большой апдейт** — переписать суть задачи с обязательным резюме "что и почему". Создаёт новую версию с полным снимком описания |
-| `add_comment` | Обсуждение / вопрос человеку / промежуточная реплика |
-| `set_needs_input(blocked)` | Отметить/снять отметку «нужен человек» — независимо от статуса, работа может застрять на любом этапе. Заблокированная так задача пропадает из `get_next_task` |
-| `delete_task` | Полностью удалить задачу (дубликат, больше не нужна). Каскадно удаляет подзадачи. Необратимо |
-| `delete_project` | Полностью удалить проект — все задачи и историю. Необратимо, только по явной просьбе человека |
+| `list_projects` | See which projects exist and how many tasks each has, by status |
+| `list_tasks(project)` | Quickly view a project's task list without extra context |
+| `get_task(project, id)` | Get the full card for a specific task, when you need details |
+| `get_next_task(project, parent?)` | **Start here** — instead of scanning the list, ask what to do next |
+| `create_task` / `create_subtask` | Create a task, or break one into subtasks |
+| `update_status` | Change status — goes into technical activity, not updates |
+| `update_task` | Change fields on an existing task (priority, labels, order, blockers, title, assignee) — also goes into activity, not updates |
+| `update_description(description, summary)` | **The big update** — rewrite the task's substance with a required "what and why" summary. Creates a new version with a full snapshot of the description |
+| `add_comment` | Discussion / a question for the human / a passing remark |
+| `set_needs_input(blocked)` | Flag or unflag "needs a human" — independent of status, work can stall at any stage. A task flagged this way drops out of `get_next_task` |
+| `delete_task` | Permanently delete a task (a duplicate, no longer needed). Cascades to subtasks. Irreversible |
+| `delete_project` | Permanently delete an entire project — all tasks and history. Irreversible, only on an explicit human request |
 
-**Главное правило:** не вызывайте `list_tasks`/`get_task` для всего проекта, если вам нужна
-всего одна следующая задача — используйте `get_next_task`. Это экономит контекст и не даёт
-потеряться в плане.
+**Main rule:** don't call `list_tasks`/`get_task` for the whole project if you just need the
+next single task — use `get_next_task`. It saves context and keeps you from losing the plan.
 
-## Протокол для длинных loop/cycle-сессий
+## Protocol for long loop/cycle sessions
 
-Если вы запускаетесь многократно — по расписанию, в цикле, без человека в контуре на каждой
-итерации — придерживайтесь этого протокола. Он существует, чтобы после сброса контекста
-("холодного старта") вы восстанавливали план за секунды через систему, а не держали его в
-голове между итерациями, и чтобы человек, который заглянет спустя много циклов, сразу понял,
-что произошло.
+If you're launched repeatedly — on a schedule, in a loop, with no human in the loop on every
+iteration — follow this protocol. It exists so that after a context reset ("cold start") you
+can reconstruct the plan in seconds through the system instead of holding it in your head
+between iterations, and so a human checking in after many cycles immediately understands
+what happened.
 
-**Холодный старт (начало новой сессии/итерации):**
-1. `get_next_task(project)` — не листайте список задач вручную, спросите систему, что делать
-   дальше. Она уже учитывает статус, порядок и блокировки.
-2. Если задача вернулась — `get_task` по ней, прочитайте `description` и 1-2 последних
-   `updates[].summary`. Этого почти всегда достаточно, чтобы понять, что уже сделано и почему,
-   не читая всю историю комментариев/активности.
-3. Если `get_next_task` вернул `null` — либо всё сделано, либо всё упирается в человека (см.
-   ниже). Не придумывайте себе работу — это сигнал остановиться.
+**Cold start (beginning of a new session/iteration):**
+1. `get_next_task(project)` — don't page through the task list by hand, ask the system what's
+   next. It already accounts for status, order, and blockers.
+2. If a task comes back — `get_task` on it, read `description` and the last 1-2
+   `updates[].summary` entries. That's almost always enough to understand what's been done
+   and why, without reading the whole comment/activity history.
+3. If `get_next_task` returns `null` — either everything is done, or everything is stuck on a
+   human (see below). Don't invent work for yourself — that's a signal to stop.
 
-**Каждая итерация:**
-- Делайте один осмысленный шаг за итерацию, а не пытайтесь закрыть всю задачу целиком.
-- Суть задачи изменилась по итогам шага → `update_description` с резюме. Просто продвинулись
-  рутинно (статус, поле) → `update_status`/`update_task`, апдейт не нужен, это сама система
-  логирует в активность.
-- Нужна декомпозиция — `create_subtask`, а не удержание плана в собственном контексте. Система
-  — это и есть ваша память между итерациями, не полагайтесь на то, что "запомните сами".
+**Each iteration:**
+- Take one meaningful step per iteration, don't try to close out the whole task at once.
+- If the task's substance changed as a result of the step → `update_description` with a
+  summary. If you just made routine progress (status, a field) → `update_status`/`update_task`
+  — no update needed, the system logs it to activity on its own.
+- Need to break work down? → `create_subtask`, rather than holding the plan in your own
+  context. The system is your memory between iterations — don't rely on "remembering it
+  yourself."
 
-**Если застряли и нужно решение человека:**
-- **Не меняйте статус** — работа может застрять на любом этапе (и в Backlog, и в In Progress),
-  это не отдельная стадия конвейера. Вызовите `set_needs_input(project, id, blocked=true)` —
-  задача останется там, где была, но перестанет предлагаться через `get_next_task`, и человек
-  увидит 🚩-индикатор на карточке и счётчик в сайдбаре.
-- Оставьте `add_comment` с точным вопросом — не общими словами "нужна помощь", а тем, что
-  конкретно непонятно и какие варианты вы видите.
-- Продолжайте цикл на следующей задаче через `get_next_task` — не блокируйте весь цикл ожиданием
-  ответа по одной задаче.
-- Когда человек ответил (новый комментарий) — снимите отметку: `set_needs_input(project, id,
-  blocked=false)`. Задача снова появится в `get_next_task`.
+**If you're stuck and need a human decision:**
+- **Don't change status** — work can stall at any stage (in Backlog just as easily as In
+  Progress), it isn't a separate pipeline stage. Call `set_needs_input(project, id,
+  blocked=true)` — the task stays where it was, but stops being suggested by `get_next_task`,
+  and the human sees a 🚩 indicator on the card and a counter in the sidebar.
+- Leave `add_comment` with a precise question — not vague "need help," but exactly what's
+  unclear and what options you see.
+- Keep the loop going on the next task via `get_next_task` — don't block the whole cycle
+  waiting on an answer for one task.
+- Once the human has answered (a new comment) — clear the flag: `set_needs_input(project, id,
+  blocked=false)`. The task will show up in `get_next_task` again.
 
-**Конец сессии/цикла:** отдельного действия не нужно — апдейты и активность уже и есть журнал
-сессии. Если хотите оставить сводку цикла целиком, один `add_comment` на самой значимой
-затронутой задаче ("за этот цикл: сделал X и Y, застрял на Z") — этого достаточно.
+**End of session/cycle:** no separate action needed — updates and activity are already the
+session's log. If you want to leave a summary of the whole cycle, one `add_comment` on the
+most significant task touched ("this cycle: did X and Y, stuck on Z") is enough.
 
-## 2. Fallback — прямой доступ к файлам
+## 2. Fallback — direct file access
 
-Если MCP недоступен, можно читать и редактировать файлы напрямую. Структура:
+If MCP isn't available, you can read and edit files directly. Structure:
 
 ```
-vault/projects/<slug>/project.md         # конфиг проекта: name, key, statuses, labels
-vault/projects/<slug>/tasks/<KEY-N>.md   # одна задача = один файл
+vault/projects/<slug>/project.md         # project config: name, key, statuses, labels
+vault/projects/<slug>/tasks/<KEY-N>.md   # one task = one file
 ```
 
-Формат файла задачи:
+Task file format:
 
 ```yaml
 ---
 id: WEB-1
 title: "Implement login form"
-status: in_progress        # id из project.md → statuses[]
+status: in_progress        # id from project.md → statuses[]
 priority: medium            # low | medium | high | urgent
 assignee: agent              # agent | human
-parent: null                 # id родительской задачи или null
-order: 10                     # для сортировки и get_next_task
-blockedBy: []                 # id задач-блокеров
-blocked: false                 # true = ждёт решения человека, независимо от status
+parent: null                 # parent task id, or null
+order: 10                     # for sorting and get_next_task
+blockedBy: []                 # ids of blocking tasks
+blocked: false                 # true = waiting on a human decision, independent of status
 labels: [frontend]
 created: 2026-07-01T10:00:00Z
 updated: 2026-07-01T12:30:00Z
-version: 2                    # растёт только с большими апдейтами (## Updates), не со статусами
+version: 2                    # only grows with big updates (## Updates), not with status changes
 ---
 ## Description
-Текущее описание (= текст последнего апдейта ниже).
+Current description (= the text of the latest update below).
 
 ## Updates
 ### v2 — 2026-07-01T12:30:00Z — agent
-Резюме: Переписал подход на event-driven, т.к. старый не масштабировался.
+Summary: Switched to an event-driven approach, the old one didn't scale.
 
-Текст задачи на этот момент:
-Текущее описание (= текст последнего апдейта ниже).
+Task text at this point:
+Current description (= the text of the latest update below).
 
 ### v1 — 2026-07-01T10:00:00Z — agent
-Резюме: Задача создана.
+Summary: Task created.
 
-Текст задачи на этот момент:
-(исходное описание)
+Task text at this point:
+(original description)
 
 ## Comments
 ### 2026-07-01T11:15:00Z — human
-Комментарий.
+A comment.
 
-## Активность
+## Activity
 ### 2026-07-01T12:30:00Z — agent
 Status changed: todo → in_progress
 
 ## Subtasks
-- [ ] WEB-4 — Дочерняя задача (todo) (генерируется автоматически, не редактируйте руками)
+- [ ] WEB-4 — Child task (todo) (auto-generated, don't edit by hand)
 ```
 
-Правила при прямом редактировании:
+Rules for editing directly:
 
-1. **Большой апдейт сути задачи** (переписали описание по итогам работы) → увеличьте
-   `version` на 1, добавьте запись `### vN — <ISO-таймстамп> — agent` в начало `## Updates`
-   в формате `Резюме: <что и почему>` + пустая строка + `Текст задачи на этот момент:` + полный
-   текст нового описания.
-2. **Рутинное изменение** (статус, приоритет, поля, `blocked`) → **не трогайте `version`**,
-   добавьте запись в `## Активность` в формате `### <ISO-таймстамп> — agent` + короткая
-   техническая пометка.
-3. **Не редактируйте секцию `## Subtasks` вручную** — она автоматически пересчитывается из
-   файлов дочерних задач (по полю `parent`) при каждой записи любой из них.
-4. Обновляйте поле `updated` на текущий ISO-таймстамп при любом изменении.
-5. Не меняйте `id` и не создавайте файлы с уже существующим id — узнать следующий свободный
-   номер можно по максимальному `<KEY-N>` среди файлов в `tasks/`.
-6. Пишите атомарно (создайте временный файл и переименуйте) — сервер запущен параллельно и
-   может прочитать файл в середине записи.
+1. **A big update to the task's substance** (rewrote the description after doing the work)
+   → increment `version` by 1, add an entry `### vN — <ISO timestamp> — agent` at the top of
+   `## Updates` in the format `Summary: <what and why>` + a blank line + `Task text at this
+   point:` + the full text of the new description.
+2. **A routine change** (status, priority, fields, `blocked`) → **don't touch `version`**, add
+   an entry to `## Activity` in the format `### <ISO timestamp> — agent` + a short technical
+   note.
+3. **Don't edit the `## Subtasks` section by hand** — it's automatically recomputed from the
+   child tasks' files (via the `parent` field) every time any of them is written.
+4. Update the `updated` field to the current ISO timestamp on any change.
+5. Don't change `id`, and don't create files with an id that already exists — find the next
+   free number from the highest `<KEY-N>` among the files in `tasks/`.
+6. Write atomically (create a temp file and rename it) — the server runs in parallel and might
+   read the file mid-write otherwise.
 
-Если вы забыли обновить `version`/`Updates` при правке описания — сервер не сможет сам
-придумать резюме "что и почему", поэтому предпочитайте MCP-инструменты, если они доступны.
+Files written before this convention switched to English may still have `Активность` as the
+section name, `Резюме:` instead of `Summary:`, and `Текст задачи на этот момент:` instead of
+`Task text at this point:` — the parser reads both, so nothing is lost. Prefer the English
+forms and the MCP tools going forward.
 
-## Регистрация MCP-сервера
+If you forget to update `version`/`Updates` when editing the description directly, the server
+can't invent a "what and why" summary on its own — prefer the MCP tools when they're available.
 
-Большинство MCP-совместимых агентов используют одинаковый формат конфига. Замените пути на
-абсолютный путь к вашей копии репозитория и вашему vault — значения ниже лишь пример:
+## Registering the MCP server
+
+Most MCP-compatible agents use the same config shape. Replace the paths with the absolute
+path to your copy of the repo and your vault — the values below are just an example:
 
 ```json
 {
@@ -183,9 +188,9 @@ Status changed: todo → in_progress
 }
 ```
 
-`AGENTBOARD_VAULT` — путь к папке vault. Если не задан, читается `vault` из
-`agentboard.config.json` в корне репозитория (см. `agentboard.config.example.json`); если и
-его нет — используется `./vault` относительно рабочей директории процесса.
+`AGENTBOARD_VAULT` — path to the vault folder. If not set, `vault` is read from
+`agentboard.config.json` in the repo root (see `agentboard.config.example.json`); if that's
+missing too, `./vault` relative to the process's working directory is used.
 
-Перед первым запуском в корне репозитория должно быть выполнено `npm install` — иначе `npx
-tsx` не найдёт зависимости (`@modelcontextprotocol/sdk`, `gray-matter` и т.д.).
+Before the first run, `npm install` needs to have been run in the repo root — otherwise `npx
+tsx` won't find the dependencies (`@modelcontextprotocol/sdk`, `gray-matter`, etc.).

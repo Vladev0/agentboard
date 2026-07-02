@@ -9,7 +9,14 @@ import type {
 } from "./types.js";
 
 const SEP = " — ";
-const SNAPSHOT_LABEL = "Текст задачи на этот момент:";
+// Written in English going forward; the RU forms are still recognized on read so existing
+// task files (written before the tool's text was switched to English) don't lose history.
+const SNAPSHOT_LABEL = "Task text at this point:";
+const SNAPSHOT_LABEL_RU = "Текст задачи на этот момент:";
+const SUMMARY_PREFIX = "Summary:";
+const SUMMARY_PREFIX_RE = /^(?:Summary|Резюме):\s*/;
+const ACTIVITY_SECTION = "Activity";
+const ACTIVITY_SECTION_RU = "Активность";
 
 function splitTopSections(body: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -76,10 +83,11 @@ export function parseTaskFile(raw: string): {
   const updates: UpdateEntry[] = splitSubSections(sections["Updates"] ?? "").map((s) => {
     // "v3 — 2026-07-01T12:30:00Z — agent"
     const m = /^v(\d+)\s*—\s*(.+?)\s*—\s*(.+)$/.exec(s.header);
-    const snapshotIdx = s.text.indexOf(SNAPSHOT_LABEL);
+    const label = s.text.includes(SNAPSHOT_LABEL_RU) ? SNAPSHOT_LABEL_RU : SNAPSHOT_LABEL;
+    const snapshotIdx = s.text.indexOf(label);
     const summaryRaw = snapshotIdx >= 0 ? s.text.slice(0, snapshotIdx) : s.text;
-    const description = snapshotIdx >= 0 ? s.text.slice(snapshotIdx + SNAPSHOT_LABEL.length).trim() : "";
-    const summary = summaryRaw.replace(/^Резюме:\s*/, "").trim();
+    const description = snapshotIdx >= 0 ? s.text.slice(snapshotIdx + label.length).trim() : "";
+    const summary = summaryRaw.replace(SUMMARY_PREFIX_RE, "").trim();
     return {
       version: m ? Number(m[1]) : 0,
       timestamp: m ? m[2].trim() : "",
@@ -94,7 +102,9 @@ export function parseTaskFile(raw: string): {
     return { timestamp, author, text: s.text };
   });
 
-  const activity: ActivityEntry[] = splitSubSections(sections["Активность"] ?? "").map((s) => {
+  const activity: ActivityEntry[] = splitSubSections(
+    sections[ACTIVITY_SECTION] ?? sections[ACTIVITY_SECTION_RU] ?? ""
+  ).map((s) => {
     const { timestamp, author } = parseTimestampAuthorHeader(s.header);
     return { timestamp, author, note: s.text };
   });
@@ -121,7 +131,7 @@ export function serializeTaskFile(
     .sort((a, b) => b.version - a.version)
     .map(
       (u) =>
-        `### v${u.version}${SEP}${u.timestamp}${SEP}${u.author}\nРезюме: ${u.summary}\n\n${SNAPSHOT_LABEL}\n${u.description}`
+        `### v${u.version}${SEP}${u.timestamp}${SEP}${u.author}\n${SUMMARY_PREFIX} ${u.summary}\n\n${SNAPSHOT_LABEL}\n${u.description}`
     )
     .join("\n\n");
 
@@ -149,7 +159,7 @@ export function serializeTaskFile(
     "## Comments",
     commentsBlock,
     "",
-    "## Активность",
+    `## ${ACTIVITY_SECTION}`,
     activityBlock,
     "",
     "## Subtasks",

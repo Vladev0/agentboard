@@ -1,12 +1,17 @@
 # Screenshots
 
-Drop these three files here (exact names, referenced directly from the root `README.md`):
+Used in the root `README.md`:
 
-| File | What it should show |
+| File | Shows |
 |---|---|
-| `board-overview.png` | The Kanban board for a project with a good status spread — the hero shot. |
-| `task-detail.png` | An open task with the 🚩 needs-input flag visible, and the Overview/Updates tabs. |
-| `vault-files.png` | The vault folder on disk — plain `.md` files, proving there's no database underneath. |
+| `board-overview.png` | The Kanban board — hero shot. |
+| `task-detail.png` | An open task with the 🚩 needs-input flag and the Overview/Updates tabs. |
+| `vault-files.png` | A task's raw markdown file open in a plain text editor. |
+| `subtasks.png` | Subtasks as real entities, each with its own status. |
 
-Not tracked in git as placeholders — this file just documents the expected names so the
-root README's image links resolve once the real screenshots are added.
+Bonus / not embedded in the README, kept for social posts:
+
+| File | Shows |
+|---|---|
+| `vault-folders.png` | The vault's `projects/` folder on disk. |
+| `vault-file-list.png` | A project's `tasks/` folder — one file per task. |

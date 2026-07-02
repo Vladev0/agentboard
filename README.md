@@ -44,8 +44,11 @@ Open any task in a plain text editor and you'll see exactly what the UI shows yo
 ![Task detail — status, priority, needs-input flag, tabs for overview and version history](./docs/screenshots/task-detail.png)
 
 - **Overview / Updates tabs** — the current state of the task stays the primary view; version history is one click away, not competing for space.
-- **Subtasks** are real entities with their own status, not a checklist — because a subtask an agent is working on deserves its own history too.
 - **Comments** are the conversation layer; **Updates** are deliberate checkpoints; **Activity** (status/field changes) is routine bookkeeping, collapsed by default. Three different things, kept visibly separate.
+
+![Subtasks — real entities with their own status, not a checklist](./docs/screenshots/subtasks.png)
+
+**Subtasks are real entities** with their own status, not a checklist — because a subtask an agent is working on deserves its own history too.
 
 ## MCP-native
 
