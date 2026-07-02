@@ -137,7 +137,7 @@ describe("task lifecycle round-trip", () => {
     expect(flagged.blocked).toBe(true);
     expect(flagged.status).toBe("in_progress"); // unchanged — blocked is independent of status
     expect(flagged.version).toBe(1); // routine bookkeeping, not a substance update
-    expect(flagged.activity.some((a) => a.note.includes("нужен человек"))).toBe(true);
+    expect(flagged.activity.some((a) => a.note.includes("needs human input"))).toBe(true);
 
     const unflagged = setBlocked(vaultRoot, project.slug, task.id, false);
     expect(unflagged.blocked).toBe(false);

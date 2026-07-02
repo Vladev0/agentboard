@@ -158,7 +158,7 @@ export function createTask(vaultRoot: string, slug: string, input: CreateTaskInp
     };
 
     const updates: UpdateEntry[] = [
-      { version: 1, timestamp: now, author: input.author ?? "agent", summary: "Задача создана.", description },
+      { version: 1, timestamp: now, author: input.author ?? "agent", summary: "Task created.", description },
     ];
 
     write(vaultRoot, slug, { frontmatter, description, updates, comments: [], activity: [] });
@@ -203,7 +203,7 @@ export function updateStatus(
     (fm) => {
       fm.status = status;
     },
-    `Статус изменён: ${before} → ${status}`,
+    `Status changed: ${before} → ${status}`,
     author
   );
 }
@@ -229,7 +229,7 @@ export function setBlocked(
     (fm) => {
       fm.blocked = blocked;
     },
-    blocked ? "Отмечено: нужен человек" : "Отметка «нужен человек» снята",
+    blocked ? "Flagged: needs human input" : "Needs-input flag cleared",
     author
   );
 }
@@ -255,7 +255,7 @@ export function updateDescription(
       version: raw.frontmatter.version,
       timestamp: raw.frontmatter.updated,
       author,
-      summary: summary || "Описание обновлено.",
+      summary: summary || "Description updated.",
       description: newDescription,
     });
     raw.description = newDescription;
@@ -275,7 +275,7 @@ export function updateFields(
     slug,
     id,
     (fm) => Object.assign(fm, patch),
-    `Поля обновлены: ${Object.keys(patch).join(", ")}`,
+    `Fields updated: ${Object.keys(patch).join(", ")}`,
     author
   );
 }

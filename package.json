@@ -15,6 +15,7 @@
     "start": "node dist/server/index.js",
     "mcp": "tsx src/mcp/index.ts",
     "seed": "tsx src/core/seed.ts",
+    "seed:promo": "tsx src/core/seed-promo.ts",
     "test": "vitest run"
   },
   "dependencies": {

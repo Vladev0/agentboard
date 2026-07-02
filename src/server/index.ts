@@ -8,6 +8,17 @@ import { VaultWatcher } from "../core/watcher.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 
+// This is a local single-user dev tool — staying up through a stray error (a watcher
+// callback racing a file deletion, say) matters more than Node's usual "an uncaught
+// exception means the process is in an unknown state, so crash" default. Log loudly
+// instead of taking the whole board down.
+process.on("uncaughtException", (err) => {
+  console.error("[server] uncaught exception (continuing):", err);
+});
+process.on("unhandledRejection", (err) => {
+  console.error("[server] unhandled rejection (continuing):", err);
+});
+
 const vaultRoot = getVaultRoot();
 cleanupStaleArtifacts(vaultRoot);
 const cache = new VaultCache(vaultRoot);
