@@ -67,6 +67,10 @@ interface Dictionary {
   closeTooltip: string;
   maximizeTooltip: string;
   restoreSizeTooltip: string;
+  needsInputFlag: string;
+  markNeedsInputButton: string;
+  markNeedsInputTooltip: string;
+  unmarkNeedsInputTooltip: string;
 
   roleAgent: string;
   roleHuman: string;
@@ -156,6 +160,10 @@ const en: Dictionary = {
   closeTooltip: "Close",
   maximizeTooltip: "Maximize",
   restoreSizeTooltip: "Restore size",
+  needsInputFlag: "Needs input",
+  markNeedsInputButton: "Flag for input",
+  markNeedsInputTooltip: "Flag as waiting on a human decision",
+  unmarkNeedsInputTooltip: "Clear the needs-input flag",
 
   roleAgent: "agent",
   roleHuman: "human",
@@ -189,7 +197,6 @@ const en: Dictionary = {
     backlog: "Backlog",
     todo: "Todo",
     in_progress: "In Progress",
-    needs_input: "Needs Input",
     in_review: "In Review",
     done: "Done",
   },
@@ -249,6 +256,10 @@ const es: Dictionary = {
   closeTooltip: "Cerrar",
   maximizeTooltip: "Maximizar",
   restoreSizeTooltip: "Restaurar tamaño",
+  needsInputFlag: "Necesita respuesta",
+  markNeedsInputButton: "Marcar como pendiente",
+  markNeedsInputTooltip: "Marcar como a la espera de una decisión humana",
+  unmarkNeedsInputTooltip: "Quitar la marca de pendiente",
 
   roleAgent: "agente",
   roleHuman: "humano",
@@ -282,7 +293,6 @@ const es: Dictionary = {
     backlog: "Pendientes",
     todo: "Por hacer",
     in_progress: "En curso",
-    needs_input: "Necesita respuesta",
     in_review: "En revisión",
     done: "Hecho",
   },
@@ -343,6 +353,10 @@ const ru: Dictionary = {
   closeTooltip: "Закрыть",
   maximizeTooltip: "Развернуть на весь экран",
   restoreSizeTooltip: "Восстановить размер",
+  needsInputFlag: "Нужен ответ",
+  markNeedsInputButton: "Отметить, что нужен ответ",
+  markNeedsInputTooltip: "Отметить, что задача ждёт решения человека",
+  unmarkNeedsInputTooltip: "Снять отметку «нужен ответ»",
 
   roleAgent: "агент",
   roleHuman: "человек",
@@ -376,7 +390,6 @@ const ru: Dictionary = {
     backlog: "Бэклог",
     todo: "К выполнению",
     in_progress: "В работе",
-    needs_input: "Нужен ответ",
     in_review: "На проверке",
     done: "Готово",
   },

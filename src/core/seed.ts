@@ -1,5 +1,5 @@
 import { createProject } from "./project.js";
-import { addComment, createSubtask, createTask, updateDescription, updateStatus } from "./task.js";
+import { addComment, createSubtask, createTask, setBlocked, updateDescription, updateStatus } from "./task.js";
 import { getVaultRoot } from "./vault.js";
 
 function seed(): void {
@@ -73,7 +73,8 @@ function seed(): void {
     labels: ["bug"],
     order: 50,
   });
-  updateStatus(vaultRoot, web.slug, w5.id, "needs_input");
+  updateStatus(vaultRoot, web.slug, w5.id, "in_progress");
+  setBlocked(vaultRoot, web.slug, w5.id, true);
   addComment(
     vaultRoot,
     web.slug,

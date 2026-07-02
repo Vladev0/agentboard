@@ -45,6 +45,12 @@ export const api = {
       body: JSON.stringify({ status, author }),
     }),
 
+  setBlocked: (slug: string, id: string, blocked: boolean, author = "human") =>
+    request<Task>(`/api/projects/${slug}/tasks/${id}/blocked`, {
+      method: "PATCH",
+      body: JSON.stringify({ blocked, author }),
+    }),
+
   setDescription: (slug: string, id: string, description: string, summary: string, author = "human") =>
     request<Task>(`/api/projects/${slug}/tasks/${id}/description`, {
       method: "PATCH",

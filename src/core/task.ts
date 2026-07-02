@@ -113,6 +113,7 @@ export function listTasks(vaultRoot: string, slug: string): TaskSummary[] {
       order: fm.order,
       labels: fm.labels,
       updated: fm.updated,
+      blocked: fm.blocked,
       subtaskProgress: { done, total: children.length },
     };
   });
@@ -153,6 +154,7 @@ export function createTask(vaultRoot: string, slug: string, input: CreateTaskInp
       created: now,
       updated: now,
       version: 1,
+      blocked: false,
     };
 
     const updates: UpdateEntry[] = [
@@ -202,6 +204,32 @@ export function updateStatus(
       fm.status = status;
     },
     `Статус изменён: ${before} → ${status}`,
+    author
+  );
+}
+
+/**
+ * Flags (or unflags) a task as waiting on a human decision — independent of `status`,
+ * since work can stall at any stage of the pipeline, not just in a dedicated column.
+ * A blocked task is excluded from `getNextTask` so an agent doesn't keep proposing it.
+ */
+export function setBlocked(
+  vaultRoot: string,
+  slug: string,
+  id: string,
+  blocked: boolean,
+  author = "agent"
+): Task {
+  const before = readRaw(vaultRoot, slug, id).frontmatter.blocked;
+  if (before === blocked) return readTask(vaultRoot, slug, id);
+  return logActivity(
+    vaultRoot,
+    slug,
+    id,
+    (fm) => {
+      fm.blocked = blocked;
+    },
+    blocked ? "Отмечено: нужен человек" : "Отметка «нужен человек» снята",
     author
   );
 }
@@ -317,12 +345,13 @@ export function getNextTask(
   const candidates = all.filter((fm) => {
     if (fm.parent !== parent) return false;
     if (fm.status === terminal) return false;
-    const blocked = fm.blockedBy.some((bId) => {
+    if (fm.blocked) return false; // Waiting on a human — don't keep proposing it.
+    const blockedByOther = fm.blockedBy.some((bId) => {
       const blocker = byId.get(bId);
       // A blocker that no longer exists (e.g. deleted) can't be blocking anything.
       return blocker !== undefined && blocker.status !== terminal;
     });
-    return !blocked;
+    return !blockedByOther;
   });
 
   candidates.sort((a, b) => a.order - b.order || priorityRank[a.priority] - priorityRank[b.priority]);

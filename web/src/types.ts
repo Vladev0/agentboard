@@ -6,7 +6,6 @@ export interface StatusDef {
   id: string;
   name: string;
   color: string;
-  blocksOnHuman?: boolean;
 }
 
 export interface Project {
@@ -18,6 +17,7 @@ export interface Project {
   created: string;
   taskCount: number;
   counts: Record<string, number>;
+  blockedCount: number;
 }
 
 export interface UpdateEntry {
@@ -57,6 +57,7 @@ export interface TaskSummary {
   order: number;
   labels: string[];
   updated: string;
+  blocked: boolean;
   subtaskProgress: { done: number; total: number };
 }
 

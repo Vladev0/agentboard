@@ -14,7 +14,8 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
       const counts: Record<string, number> = {};
       for (const status of project.statuses) counts[status.id] = 0;
       for (const task of tasks) counts[task.status] = (counts[task.status] ?? 0) + 1;
-      return { ...project, taskCount: tasks.length, counts };
+      const blockedCount = tasks.filter((t) => t.blocked).length;
+      return { ...project, taskCount: tasks.length, counts, blockedCount };
     });
   });
 

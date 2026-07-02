@@ -5,9 +5,6 @@ export interface StatusDef {
   id: string;
   name: string;
   color: string;
-  /** Tasks parked here are waiting on a human decision — surfaced as a global count so a
-   *  person supervising a long agent loop can tell at a glance whether they're needed. */
-  blocksOnHuman?: boolean;
 }
 
 export interface ProjectConfig {
@@ -66,6 +63,9 @@ export interface TaskFrontmatter {
   created: string;
   updated: string;
   version: number;
+  /** Waiting on a human decision to proceed — independent of `status`, since work can get
+   *  stuck at any stage of the pipeline, not just in a dedicated column. */
+  blocked: boolean;
 }
 
 export interface Task extends TaskFrontmatter {
@@ -86,5 +86,6 @@ export interface TaskSummary {
   order: number;
   labels: string[];
   updated: string;
+  blocked: boolean;
   subtaskProgress: { done: number; total: number };
 }

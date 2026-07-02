@@ -57,6 +57,7 @@ export function TaskDetail() {
   const locale = useStore((s) => s.locale);
   const closeTask = useStore((s) => s.closeTask);
   const setStatus = useStore((s) => s.setStatus);
+  const setBlocked = useStore((s) => s.setBlocked);
   const setDescription = useStore((s) => s.setDescription);
   const addComment = useStore((s) => s.addComment);
   const createSubtask = useStore((s) => s.createSubtask);
@@ -243,6 +244,19 @@ export function TaskDetail() {
                 <span className={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT_CLASSES[task.priority]}`} />
                 {cap(task.assignee === "agent" ? t.roleAgent : t.roleHuman)}
               </span>
+
+              <button
+                onClick={() => setBlocked(task.id, !task.blocked)}
+                title={task.blocked ? t.unmarkNeedsInputTooltip : t.markNeedsInputTooltip}
+                className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] ${
+                  task.blocked
+                    ? "border-red-200 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
+                    : "border-neutral-200 text-neutral-400 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                }`}
+              >
+                <span>🚩</span>
+                <span>{task.blocked ? t.needsInputFlag : t.markNeedsInputButton}</span>
+              </button>
             </div>
 
             {latestUpdate && (

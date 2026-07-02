@@ -11,6 +11,7 @@ import {
   getNextTask,
   listTasks,
   readTask,
+  setBlocked,
   updateDescription,
   updateFields,
   updateStatus,
@@ -125,6 +126,35 @@ describe("task lifecycle round-trip", () => {
 
     updateStatus(vaultRoot, project.slug, t1.id, "done");
     expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t2.id);
+  });
+
+  it("flags a task as needing input independently of status, logs to activity without bumping version", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const task = createTask(vaultRoot, project.slug, { title: "Do a thing" });
+    updateStatus(vaultRoot, project.slug, task.id, "in_progress");
+
+    const flagged = setBlocked(vaultRoot, project.slug, task.id, true);
+    expect(flagged.blocked).toBe(true);
+    expect(flagged.status).toBe("in_progress"); // unchanged — blocked is independent of status
+    expect(flagged.version).toBe(1); // routine bookkeeping, not a substance update
+    expect(flagged.activity.some((a) => a.note.includes("нужен человек"))).toBe(true);
+
+    const unflagged = setBlocked(vaultRoot, project.slug, task.id, false);
+    expect(unflagged.blocked).toBe(false);
+  });
+
+  it("excludes a blocked task from getNextTask so an agent doesn't keep proposing it", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const t1 = createTask(vaultRoot, project.slug, { title: "First", order: 10 });
+    createTask(vaultRoot, project.slug, { title: "Second", order: 20 });
+
+    expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t1.id);
+
+    setBlocked(vaultRoot, project.slug, t1.id, true);
+    expect(getNextTask(vaultRoot, project.slug)?.id).not.toBe(t1.id);
+
+    setBlocked(vaultRoot, project.slug, t1.id, false);
+    expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t1.id);
   });
 
   it("deletes a task and syncs the former parent's subtask list", () => {

@@ -9,18 +9,14 @@ function detectDefaultLocale(): Locale {
   return "en";
 }
 
-/** How many tasks, across all projects, sit in a status marked `blocksOnHuman`. */
+/** How many tasks, across all projects, are flagged as waiting on a human. */
 export function needsAttentionCount(projects: Project[]): number {
-  return projects.reduce(
-    (sum, p) =>
-      sum + p.statuses.filter((s) => s.blocksOnHuman).reduce((n, s) => n + (p.counts[s.id] ?? 0), 0),
-    0
-  );
+  return projects.reduce((sum, p) => sum + p.blockedCount, 0);
 }
 
 /** Per-project version of the same count, for a dot next to each project row. */
 export function projectNeedsAttentionCount(project: Project): number {
-  return project.statuses.filter((s) => s.blocksOnHuman).reduce((n, s) => n + (project.counts[s.id] ?? 0), 0);
+  return project.blockedCount;
 }
 
 interface State {
@@ -50,6 +46,7 @@ interface State {
   createTask: (title: string, description?: string, priority?: Task["priority"]) => Promise<void>;
   createSubtask: (parentId: string, title: string) => Promise<void>;
   setStatus: (id: string, status: string) => Promise<void>;
+  setBlocked: (id: string, blocked: boolean) => Promise<void>;
   setDescription: (id: string, description: string, summary: string) => Promise<void>;
   addComment: (id: string, text: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -181,6 +178,15 @@ export const useStore = create<State>((set, get) => ({
     await api.setStatus(slug, id, status);
     await get().reloadTasks(slug);
     // Reload the open task even if a *subtask* of it changed, so its subtask list stays current.
+    if (get().selectedTaskId) await get().openTask(get().selectedTaskId!);
+  },
+
+  setBlocked: async (id, blocked) => {
+    const slug = get().selectedSlug;
+    if (!slug) return;
+    await api.setBlocked(slug, id, blocked);
+    await get().reloadTasks(slug);
+    await get().reloadProjects();
     if (get().selectedTaskId) await get().openTask(get().selectedTaskId!);
   },
 

@@ -9,6 +9,7 @@ import {
   getNextTask,
   listTasks,
   readTask,
+  setBlocked,
   updateDescription,
   updateFields,
   updateStatus,
@@ -31,7 +32,8 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
         const counts: Record<string, number> = {};
         for (const s of p.statuses) counts[s.id] = 0;
         for (const t of tasks) counts[t.status] = (counts[t.status] ?? 0) + 1;
-        return { ...p, taskCount: tasks.length, counts };
+        const blockedCount = tasks.filter((t) => t.blocked).length;
+        return { ...p, taskCount: tasks.length, counts, blockedCount };
       });
       return text(projects);
     }
@@ -112,6 +114,13 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
     "Изменить статус задачи. Это рутинное событие — попадает в техническую активность задачи, не в её версии-апдейты.",
     { project: z.string(), id: z.string(), status: z.string() },
     async ({ project, id, status }) => text(updateStatus(vaultRoot, project, id, status, "agent"))
+  );
+
+  server.tool(
+    "set_needs_input",
+    "Отметить (или снять отметку), что задача ждёт решения человека — независимо от статуса, работа может застрять на любом этапе конвейера, не только в отдельной колонке. Заблокированная так задача перестаёт предлагаться через get_next_task. После того как человек ответил (в комментарии), снимите отметку вызовом с blocked=false.",
+    { project: z.string(), id: z.string(), blocked: z.boolean() },
+    async ({ project, id, blocked }) => text(setBlocked(vaultRoot, project, id, blocked, "agent"))
   );
 
   server.tool(

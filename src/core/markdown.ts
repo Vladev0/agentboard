@@ -68,6 +68,7 @@ export function parseTaskFile(raw: string): {
     created: data.created,
     updated: data.updated,
     version: data.version ?? 1,
+    blocked: data.blocked ?? false,
   };
 
   const sections = splitTopSections(content);

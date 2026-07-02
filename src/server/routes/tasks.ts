@@ -7,6 +7,7 @@ import {
   deleteTask,
   getNextTask,
   readTask,
+  setBlocked,
   updateDescription,
   updateFields,
   updateStatus,
@@ -28,6 +29,7 @@ const createTaskSchema = z.object({
 });
 
 const statusSchema = z.object({ status: z.string().min(1), author: z.string().optional() });
+const blockedSchema = z.object({ blocked: z.boolean(), author: z.string().optional() });
 const descriptionSchema = z.object({
   description: z.string(),
   summary: z.string().optional(),
@@ -85,6 +87,16 @@ export async function registerTaskRoutes(app: FastifyInstance): Promise<void> {
     async (req) => {
       const body = statusSchema.parse(req.body);
       const task = updateStatus(app.vaultRoot, req.params.slug, req.params.id, body.status, body.author);
+      app.cache.refreshProject(req.params.slug);
+      return task;
+    }
+  );
+
+  app.patch<{ Params: { slug: string; id: string } }>(
+    "/api/projects/:slug/tasks/:id/blocked",
+    async (req) => {
+      const body = blockedSchema.parse(req.body);
+      const task = setBlocked(app.vaultRoot, req.params.slug, req.params.id, body.blocked, body.author);
       app.cache.refreshProject(req.params.slug);
       return task;
     }
