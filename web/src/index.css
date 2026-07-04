@@ -22,3 +22,80 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Rendered-markdown typography for task descriptions, comments, and version snapshots. */
+.md-prose {
+  @apply text-[14.5px] leading-[1.65] text-neutral-800 dark:text-neutral-200;
+  overflow-wrap: anywhere;
+}
+.md-prose > :first-child {
+  margin-top: 0;
+}
+.md-prose > :last-child {
+  margin-bottom: 0;
+}
+.md-prose p {
+  @apply my-2;
+}
+.md-prose h1 {
+  @apply mb-2 mt-6 text-[18px] font-semibold tracking-tight;
+}
+.md-prose h2 {
+  @apply mb-1.5 mt-5 text-[16px] font-semibold tracking-tight;
+}
+.md-prose h3 {
+  @apply mb-1 mt-4 text-[14.5px] font-semibold;
+}
+.md-prose h4,
+.md-prose h5,
+.md-prose h6 {
+  @apply mb-1 mt-4 text-[12px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400;
+}
+.md-prose ul {
+  @apply my-2 list-disc pl-5;
+}
+.md-prose ol {
+  @apply my-2 list-decimal pl-5;
+}
+.md-prose li {
+  @apply my-1;
+}
+.md-prose li > ul,
+.md-prose li > ol {
+  @apply my-1;
+}
+.md-prose code {
+  @apply rounded bg-neutral-100 px-1 py-0.5 text-[12.5px] dark:bg-neutral-800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.md-prose pre {
+  @apply my-3 overflow-x-auto rounded-md border border-neutral-200 bg-neutral-50 p-3 text-[12.5px] leading-relaxed dark:border-neutral-800 dark:bg-neutral-900;
+}
+.md-prose pre code {
+  @apply bg-transparent p-0;
+}
+.md-prose blockquote {
+  @apply my-3 border-l-2 border-neutral-300 pl-3 text-neutral-500 dark:border-neutral-700 dark:text-neutral-400;
+}
+.md-prose a {
+  @apply text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent;
+}
+.md-prose hr {
+  @apply my-5 border-neutral-200 dark:border-neutral-800;
+}
+.md-prose table {
+  @apply my-3 block w-fit max-w-full border-collapse overflow-x-auto text-[13px];
+}
+.md-prose th,
+.md-prose td {
+  @apply border border-neutral-200 px-2.5 py-1 text-left dark:border-neutral-800;
+}
+.md-prose th {
+  @apply bg-neutral-50 font-medium dark:bg-neutral-900;
+}
+.md-prose img {
+  @apply my-2 max-w-full rounded-md;
+}
+.md-prose input[type="checkbox"] {
+  @apply mr-1.5 align-middle accent-accent;
+}

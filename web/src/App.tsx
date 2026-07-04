@@ -30,8 +30,7 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-neutral-900 dark:bg-[#08090a] dark:text-neutral-100">
       <Sidebar />
-      <Board />
-      {selectedTaskId && <TaskDetail />}
+      {selectedTaskId ? <TaskDetail /> : <Board />}
     </div>
   );
 }

@@ -34,6 +34,7 @@ interface Dictionary {
   retryButton: string;
   genericErrorPrefix: string;
   taskCount: (n: number) => string;
+  taskCountWithSubtasks: (total: number, subs: number) => string;
   newTaskButton: string;
   emptyColumn: string;
 
@@ -65,8 +66,17 @@ interface Dictionary {
   subtaskBadge: string;
   deleteTaskTooltip: string;
   closeTooltip: string;
-  maximizeTooltip: string;
-  restoreSizeTooltip: string;
+  backToBoardTooltip: string;
+  prevTaskTooltip: string;
+  nextTaskTooltip: string;
+  editButton: string;
+  addDescriptionButton: string;
+  propStatus: string;
+  propPriority: string;
+  propAssignee: string;
+  propLabels: string;
+  propCreated: string;
+  propUpdated: string;
   needsInputFlag: string;
   markNeedsInputButton: string;
   markNeedsInputTooltip: string;
@@ -93,6 +103,7 @@ interface Dictionary {
   noCommentsYet: string;
 
   versionSnapshotLabel: string;
+  minorEditLabel: string;
   emptyPlaceholder: string;
   activityHeading: (n: number) => string;
   noActivityYet: string;
@@ -119,6 +130,7 @@ const en: Dictionary = {
   retryButton: "Retry",
   genericErrorPrefix: "Something went wrong:",
   taskCount: (n) => `${n} ${n === 1 ? "task" : "tasks"}`,
+  taskCountWithSubtasks: (total, subs) => `${total} ${total === 1 ? "task" : "tasks"} · ${subs} in subtasks`,
   newTaskButton: "+ Task",
   emptyColumn: "Empty",
 
@@ -158,8 +170,17 @@ const en: Dictionary = {
   subtaskBadge: "Subtask",
   deleteTaskTooltip: "Delete task",
   closeTooltip: "Close",
-  maximizeTooltip: "Maximize",
-  restoreSizeTooltip: "Restore size",
+  backToBoardTooltip: "Back to board (Esc)",
+  prevTaskTooltip: "Previous task",
+  nextTaskTooltip: "Next task",
+  editButton: "Edit",
+  addDescriptionButton: "Add a description…",
+  propStatus: "Status",
+  propPriority: "Priority",
+  propAssignee: "Assignee",
+  propLabels: "Labels",
+  propCreated: "Created",
+  propUpdated: "Updated",
   needsInputFlag: "Needs input",
   markNeedsInputButton: "Flag for input",
   markNeedsInputTooltip: "Flag as waiting on a human decision",
@@ -186,6 +207,7 @@ const en: Dictionary = {
   noCommentsYet: "No comments yet.",
 
   versionSnapshotLabel: "Task text at this point:",
+  minorEditLabel: "Minor edit",
   emptyPlaceholder: "(empty)",
   activityHeading: (n) => `Activity (${n})`,
   noActivityYet: "No activity yet.",
@@ -215,6 +237,7 @@ const es: Dictionary = {
   retryButton: "Reintentar",
   genericErrorPrefix: "Algo salió mal:",
   taskCount: (n) => `${n} ${n === 1 ? "tarea" : "tareas"}`,
+  taskCountWithSubtasks: (total, subs) => `${total} ${total === 1 ? "tarea" : "tareas"} · ${subs} en subtareas`,
   newTaskButton: "+ Tarea",
   emptyColumn: "Vacío",
 
@@ -254,8 +277,17 @@ const es: Dictionary = {
   subtaskBadge: "Subtarea",
   deleteTaskTooltip: "Eliminar tarea",
   closeTooltip: "Cerrar",
-  maximizeTooltip: "Maximizar",
-  restoreSizeTooltip: "Restaurar tamaño",
+  backToBoardTooltip: "Volver al tablero (Esc)",
+  prevTaskTooltip: "Tarea anterior",
+  nextTaskTooltip: "Tarea siguiente",
+  editButton: "Editar",
+  addDescriptionButton: "Añadir una descripción…",
+  propStatus: "Estado",
+  propPriority: "Prioridad",
+  propAssignee: "Responsable",
+  propLabels: "Etiquetas",
+  propCreated: "Creada",
+  propUpdated: "Actualizada",
   needsInputFlag: "Necesita respuesta",
   markNeedsInputButton: "Marcar como pendiente",
   markNeedsInputTooltip: "Marcar como a la espera de una decisión humana",
@@ -282,6 +314,7 @@ const es: Dictionary = {
   noCommentsYet: "Aún no hay comentarios.",
 
   versionSnapshotLabel: "Texto de la tarea en ese momento:",
+  minorEditLabel: "Edición menor",
   emptyPlaceholder: "(vacío)",
   activityHeading: (n) => `Actividad (${n})`,
   noActivityYet: "Aún no hay actividad.",
@@ -312,6 +345,7 @@ const ru: Dictionary = {
   retryButton: "Повторить",
   genericErrorPrefix: "Что-то пошло не так:",
   taskCount: (n) => `${n} ${ruPlural(n, "задача", "задачи", "задач")}`,
+  taskCountWithSubtasks: (total, subs) => `${total} ${ruPlural(total, "задача", "задачи", "задач")} · ${subs} в подзадачах`,
   newTaskButton: "+ Задача",
   emptyColumn: "Пусто",
 
@@ -351,8 +385,17 @@ const ru: Dictionary = {
   subtaskBadge: "Подзадача",
   deleteTaskTooltip: "Удалить задачу",
   closeTooltip: "Закрыть",
-  maximizeTooltip: "Развернуть на весь экран",
-  restoreSizeTooltip: "Восстановить размер",
+  backToBoardTooltip: "Вернуться к доске (Esc)",
+  prevTaskTooltip: "Предыдущая задача",
+  nextTaskTooltip: "Следующая задача",
+  editButton: "Редактировать",
+  addDescriptionButton: "Добавить описание…",
+  propStatus: "Статус",
+  propPriority: "Приоритет",
+  propAssignee: "Исполнитель",
+  propLabels: "Метки",
+  propCreated: "Создана",
+  propUpdated: "Обновлена",
   needsInputFlag: "Нужен ответ",
   markNeedsInputButton: "Отметить, что нужен ответ",
   markNeedsInputTooltip: "Отметить, что задача ждёт решения человека",
@@ -379,6 +422,7 @@ const ru: Dictionary = {
   noCommentsYet: "Пока нет комментариев.",
 
   versionSnapshotLabel: "Текст задачи на этот момент:",
+  minorEditLabel: "Мелкая правка",
   emptyPlaceholder: "(пусто)",
   activityHeading: (n) => `Активность (${n})`,
   noActivityYet: "Пока нет активности.",

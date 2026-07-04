@@ -40,13 +40,20 @@ export function Board() {
   }
 
   const topLevel = tasks.filter((t) => !t.parent);
+  // The board shows only top-level cards; make the hidden share visible in the header
+  // so "15 tasks" over 5 cards doesn't read as a bug.
+  const subtaskCount = tasks.length - topLevel.length;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className="flex items-center justify-between border-b border-neutral-150 px-5 py-3 dark:border-neutral-800">
         <div className="min-w-0">
           <h1 className="truncate text-[14px] font-semibold">{project.name}</h1>
-          <p className="text-[12px] text-neutral-400">{t.taskCount(project.taskCount)}</p>
+          <p className="text-[12px] text-neutral-400">
+            {subtaskCount > 0
+              ? t.taskCountWithSubtasks(project.taskCount, subtaskCount)
+              : t.taskCount(project.taskCount)}
+          </p>
         </div>
         <button
           onClick={() => setShowNewTask(true)}
