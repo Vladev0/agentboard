@@ -154,6 +154,16 @@ Status changed: todo → in_progress
 - [ ] WEB-4 — Child task (todo) (auto-generated, don't edit by hand)
 ```
 
+**Structure — how the file is divided.** A task file is YAML frontmatter followed by exactly
+five reserved sections, always in this order: `## Description`, `## Updates`, `## Comments`,
+`## Activity`, `## Subtasks`. Only an `##` heading whose text is exactly one of those five
+names divides the file — so the **description and comment bodies are full Markdown** and may
+contain their own headings, sub-headings, lists, tables, and code blocks freely. The one
+constraint: inside free text, don't use a *top-level* `## Description`/`## Updates`/`##
+Comments`/`## Activity`/`## Subtasks` heading (these names are reserved); use a different
+name or a deeper level (`###`+), which is always safe. Write real Markdown — you don't need
+to flatten or compress it.
+
 Rules for editing directly:
 
 1. **A big update to the task's substance** (rewrote the description after doing the work)
