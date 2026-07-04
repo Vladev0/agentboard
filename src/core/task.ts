@@ -235,6 +235,14 @@ export function setBlocked(
 }
 
 /**
+ * Standard summary recorded when a description is saved without an explanation
+ * (e.g. a human fixing a couple of words in the UI). Keeps the version history
+ * complete while letting clients visually de-emphasize these versions against
+ * deliberate, explained updates.
+ */
+export const MINOR_EDIT_SUMMARY = "Minor edit.";
+
+/**
  * The "big update": a deliberate checkpoint where the task's substance (its description)
  * was rewritten after some work or discussion, with a short rationale. This is what
  * shows up prominently in the UI — distinct from casual comments and from routine
@@ -255,7 +263,7 @@ export function updateDescription(
       version: raw.frontmatter.version,
       timestamp: raw.frontmatter.updated,
       author,
-      summary: summary || "Description updated.",
+      summary: summary.trim() || MINOR_EDIT_SUMMARY,
       description: newDescription,
     });
     raw.description = newDescription;
@@ -329,6 +337,13 @@ export function deleteTask(vaultRoot: string, slug: string, id: string): void {
 /**
  * Recommends the next actionable task so an agent doesn't have to scan the whole project:
  * unblocked, not in the terminal status, lowest `order` first, ties broken by priority.
+ *
+ * When `parent` is null (the default — "what should I work on next?"), the search spans the
+ * WHOLE project at every depth. This matters: if the only top-level tasks are done or blocked
+ * but open subtasks remain, a top-level-only search would return null and an agent following
+ * the loop protocol would wrongly conclude the project is finished. Passing an explicit
+ * `parent` id instead scopes the search to that task's direct children, for deliberate
+ * level-by-level tree navigation.
  */
 export function getNextTask(
   vaultRoot: string,
@@ -343,7 +358,8 @@ export function getNextTask(
   const priorityRank: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
   const candidates = all.filter((fm) => {
-    if (fm.parent !== parent) return false;
+    // Explicit parent → that level only; null → every level (don't hide nested-only work).
+    if (parent !== null && fm.parent !== parent) return false;
     if (fm.status === terminal) return false;
     if (fm.blocked) return false; // Waiting on a human — don't keep proposing it.
     const blockedByOther = fm.blockedBy.some((bId) => {

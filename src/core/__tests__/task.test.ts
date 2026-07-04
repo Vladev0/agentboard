@@ -10,6 +10,7 @@ import {
   deleteTask,
   getNextTask,
   listTasks,
+  MINOR_EDIT_SUMMARY,
   readTask,
   setBlocked,
   updateDescription,
@@ -87,6 +88,19 @@ describe("task lifecycle round-trip", () => {
     expect(initial.description).toBe("old text");
   });
 
+  it("records the standard minor-edit summary when a description is saved without one", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const task = createTask(vaultRoot, project.slug, {
+      title: "Do a thing",
+      description: "old text",
+    });
+
+    const updated = updateDescription(vaultRoot, project.slug, task.id, "new text", "  ", "human");
+    expect(updated.version).toBe(2);
+    expect(updated.updates[0].summary).toBe(MINOR_EDIT_SUMMARY);
+    expect(updated.updates[0].description).toBe("new text");
+  });
+
   it("round-trips comments with author and text", () => {
     const project = createProject(vaultRoot, "Web", { key: "WEB" });
     const task = createTask(vaultRoot, project.slug, { title: "Do a thing" });
@@ -126,6 +140,30 @@ describe("task lifecycle round-trip", () => {
 
     updateStatus(vaultRoot, project.slug, t1.id, "done");
     expect(getNextTask(vaultRoot, project.slug)?.id).toBe(t2.id);
+  });
+
+  it("finds an open nested subtask when every top-level task is done (no top-level-only blind spot)", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const parent = createTask(vaultRoot, project.slug, { title: "Epic brief", order: 10 });
+    updateStatus(vaultRoot, project.slug, parent.id, "done");
+    const sub = createSubtask(vaultRoot, project.slug, parent.id, { title: "Real work", order: 11 });
+
+    // The only top-level task is done, but an open subtask remains: a whole-project
+    // search must surface it rather than returning null and looking "finished".
+    expect(getNextTask(vaultRoot, project.slug)?.id).toBe(sub.id);
+  });
+
+  it("scopes to one level when an explicit parent is passed (tree navigation)", () => {
+    const project = createProject(vaultRoot, "Web", { key: "WEB" });
+    const a = createTask(vaultRoot, project.slug, { title: "Branch A", order: 10 });
+    createTask(vaultRoot, project.slug, { title: "Branch B", order: 20 });
+    const a1 = createSubtask(vaultRoot, project.slug, a.id, { title: "A child", order: 11 });
+
+    // Asking within branch A returns A's child, never B or A itself.
+    expect(getNextTask(vaultRoot, project.slug, a.id)?.id).toBe(a1.id);
+    // Asking within a childless branch returns null, not something from another branch.
+    const b = listTasks(vaultRoot, project.slug).find((t) => t.title === "Branch B")!;
+    expect(getNextTask(vaultRoot, project.slug, b.id)).toBeNull();
   });
 
   it("flags a task as needing input independently of status, logs to activity without bumping version", () => {

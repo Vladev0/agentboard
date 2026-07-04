@@ -29,14 +29,20 @@ the task's actual substance changes as a result of the discussion, that's an upd
 (`update_description` with a required `summary`). Never log an "update" without an actual
 description change — that's what comments are for.
 
+If a description is saved with an empty summary (typically a human touching up wording in
+the UI), the system records the standard summary `Minor edit.` — so every text change still
+gets a version, but you can tell deliberate, explained updates apart from cosmetic ones
+when reading history. As an agent, always provide a real summary.
+
 ## 1. Primary path — MCP tools
 
 | Tool | When to use |
 |---|---|
 | `list_projects` | See which projects exist and how many tasks each has, by status |
+| `create_project(name, key?)` | Create a new project. `key` is the task-ID prefix (e.g. WEB); derived from the name if omitted |
 | `list_tasks(project)` | Quickly view a project's task list without extra context |
 | `get_task(project, id)` | Get the full card for a specific task, when you need details |
-| `get_next_task(project, parent?)` | **Start here** — instead of scanning the list, ask what to do next |
+| `get_next_task(project, parent?)` | **Start here** — instead of scanning the list, ask what to do next. With no `parent` it searches the whole project at every depth; pass a `parent` id to step through that task's subtasks |
 | `create_task` / `create_subtask` | Create a task, or break one into subtasks |
 | `update_status` | Change status — goes into technical activity, not updates |
 | `update_task` | Change fields on an existing task (priority, labels, order, blockers, title, assignee) — also goes into activity, not updates |
@@ -59,12 +65,13 @@ what happened.
 
 **Cold start (beginning of a new session/iteration):**
 1. `get_next_task(project)` — don't page through the task list by hand, ask the system what's
-   next. It already accounts for status, order, and blockers.
+   next. It already accounts for status, order, and blockers, and searches the whole project
+   at every depth, so nested subtasks are covered too — you don't have to walk the tree.
 2. If a task comes back — `get_task` on it, read `description` and the last 1-2
    `updates[].summary` entries. That's almost always enough to understand what's been done
    and why, without reading the whole comment/activity history.
-3. If `get_next_task` returns `null` — either everything is done, or everything is stuck on a
-   human (see below). Don't invent work for yourself — that's a signal to stop.
+3. If `get_next_task` returns `null` — every task everywhere in the project is either done or
+   stuck on a human (see below). Don't invent work for yourself — that's a signal to stop.
 
 **Each iteration:**
 - Take one meaningful step per iteration, don't try to close out the whole task at once.
@@ -105,7 +112,7 @@ Task file format:
 ```yaml
 ---
 id: WEB-1
-title: "Implement login form"
+title: Implement login form
 status: in_progress        # id from project.md → statuses[]
 priority: medium            # low | medium | high | urgent
 assignee: agent              # agent | human
@@ -113,9 +120,10 @@ parent: null                 # parent task id, or null
 order: 10                     # for sorting and get_next_task
 blockedBy: []                 # ids of blocking tasks
 blocked: false                 # true = waiting on a human decision, independent of status
-labels: [frontend]
-created: 2026-07-01T10:00:00Z
-updated: 2026-07-01T12:30:00Z
+labels:
+  - frontend
+created: '2026-07-01T10:00:00Z'
+updated: '2026-07-01T12:30:00Z'
 version: 2                    # only grows with big updates (## Updates), not with status changes
 ---
 ## Description
@@ -182,11 +190,17 @@ path to your copy of the repo and your vault — the values below are just an ex
     "agentboard": {
       "command": "npx",
       "args": ["tsx", "C:\\hermes\\Others\\linear\\src\\mcp\\index.ts"],
+      "cwd": "C:\\hermes\\Others\\linear",
       "env": { "AGENTBOARD_VAULT": "C:\\hermes\\Others\\linear\\vault" }
     }
   }
 }
 ```
+
+Set `cwd` to the repo root explicitly if your client supports it. Without it, the server
+process inherits whatever directory the agent happens to be rooted in at the time — if
+that's a different project, `npx` won't find this repo's local `tsx`/dependencies. Pinning
+`cwd` avoids that regardless of which project the agent is working in when it starts.
 
 `AGENTBOARD_VAULT` — path to the vault folder. If not set, `vault` is read from
 `agentboard.config.json` in the repo root (see `agentboard.config.example.json`); if that's

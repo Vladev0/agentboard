@@ -24,7 +24,7 @@ function text(value: unknown) {
 export function registerTools(server: McpServer, vaultRoot: string): void {
   server.tool(
     "list_projects",
-    "Список всех проектов в vault со счётчиками задач по статусам. Не возвращает сами задачи — используйте list_tasks для этого.",
+    "List every project in the vault with task counts by status. Does not return the tasks themselves — use list_tasks for that.",
     {},
     async () => {
       const projects = listProjects(vaultRoot).map((p) => {
@@ -41,14 +41,14 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "create_project",
-    "Создать новый проект в vault. key — короткий префикс для ID задач (например WEB), генерируется из названия если не указан.",
+    "Create a new project in the vault. `key` is a short prefix for task IDs (e.g. WEB); it's derived from the name if omitted.",
     { name: z.string(), key: z.string().optional() },
     async ({ name, key }) => text(createProject(vaultRoot, name, { key }))
   );
 
   server.tool(
     "delete_project",
-    "Полностью удалить проект — все его задачи и историю без возможности восстановления. Используйте только по явной просьбе человека, не самостоятельно по догадке.",
+    "Permanently delete a project — all of its tasks and history, unrecoverable. Only on an explicit human request, never on your own guess.",
     { project: z.string() },
     async ({ project }) => {
       deleteProject(vaultRoot, project);
@@ -58,28 +58,28 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "list_tasks",
-    "Лёгкий список задач проекта (без описаний/истории/комментариев) — экономит контекст. Для деталей используйте get_task.",
+    "A lightweight list of a project's tasks (no descriptions/history/comments) — saves context. Use get_task for the details of one.",
     { project: z.string() },
     async ({ project }) => text(listTasks(vaultRoot, project))
   );
 
   server.tool(
     "get_task",
-    "Полная карточка одной задачи: описание, версии-апдейты (эволюция сути задачи), комментарии, техническая активность, подзадачи. Запрашивайте только когда нужны детали конкретной задачи.",
+    "The full card for one task: description, versioned updates (the task's evolution), comments, technical activity, and subtasks. Request only when you need the details of a specific task.",
     { project: z.string(), id: z.string() },
     async ({ project, id }) => text(readTask(vaultRoot, project, id))
   );
 
   server.tool(
     "get_next_task",
-    "Рекомендует следующую задачу для работы: не заблокированную, не в терминальном статусе, с наименьшим order. Используйте это вместо ручного перебора всех задач, чтобы не терять план и не тратить лишний контекст.",
+    "Recommends the next task to work on: not blocked, not in the terminal status, lowest `order` first (ties broken by priority). With no `parent`, it searches the whole project at every depth — so nested-only work isn't missed; pass a `parent` id to scope the search to that task's direct subtasks. Use this instead of scanning the whole list, so you don't lose the plan or waste context.",
     { project: z.string(), parent: z.string().nullable().optional() },
     async ({ project, parent }) => text(getNextTask(vaultRoot, project, parent ?? null))
   );
 
   server.tool(
     "create_task",
-    "Создать новую задачу верхнего уровня в проекте.",
+    "Create a new top-level task in a project.",
     {
       project: z.string(),
       title: z.string(),
@@ -94,7 +94,7 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "create_subtask",
-    "Создать подзадачу внутри существующей задачи (для декомпозиции плана без потери контекста).",
+    "Create a subtask inside an existing task (to break a plan down without holding it all in your own context).",
     {
       project: z.string(),
       parentId: z.string(),
@@ -111,21 +111,21 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "update_status",
-    "Изменить статус задачи. Это рутинное событие — попадает в техническую активность задачи, не в её версии-апдейты.",
+    "Change a task's status. This is routine bookkeeping — it goes into the task's technical activity, not its versioned updates.",
     { project: z.string(), id: z.string(), status: z.string() },
     async ({ project, id, status }) => text(updateStatus(vaultRoot, project, id, status, "agent"))
   );
 
   server.tool(
     "set_needs_input",
-    "Отметить (или снять отметку), что задача ждёт решения человека — независимо от статуса, работа может застрять на любом этапе конвейера, не только в отдельной колонке. Заблокированная так задача перестаёт предлагаться через get_next_task. После того как человек ответил (в комментарии), снимите отметку вызовом с blocked=false.",
+    "Flag (or unflag) a task as waiting on a human decision — independent of status, since work can stall at any stage of the pipeline, not just in a dedicated column. A task flagged this way stops being suggested by get_next_task. Once the human has answered (in a comment), clear it by calling again with blocked=false.",
     { project: z.string(), id: z.string(), blocked: z.boolean() },
     async ({ project, id, blocked }) => text(setBlocked(vaultRoot, project, id, blocked, "agent"))
   );
 
   server.tool(
     "update_task",
-    "Изменить поля существующей задачи (заголовок, приоритет, метки, порядок, блокировки, исполнителя) без смены статуса и без создания апдейта — это тоже рутинное событие, попадает в техническую активность. Передавайте только те поля, которые меняете.",
+    "Change fields on an existing task (title, priority, labels, order, blockers, assignee) without changing status and without creating an update — this is also routine bookkeeping, logged to technical activity. Pass only the fields you're changing.",
     {
       project: z.string(),
       id: z.string(),
@@ -141,7 +141,7 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "update_description",
-    "Зафиксировать 'большой апдейт' задачи: перепишите описание после того, как в комментариях/по ходу работы созрело решение, что нужно поменять. summary — обязательное краткое резюме, ЧТО и ПОЧЕМУ изменилось (как commit message). Каждый вызов создаёт новую версию с полным снимком описания — так строится история эволюции сути задачи, которую видно в UI. Не используйте это для мелких правок или обсуждения — для этого есть add_comment.",
+    "Record a 'big update' to a task: rewrite the description once discussion/work has led to a decision about what should change. `summary` is a required short note on WHAT changed and WHY (like a commit message). Each call creates a new version with a full snapshot of the description — this builds the task's substance-evolution history shown in the UI. Don't use it for minor tweaks or discussion — use add_comment for those.",
     { project: z.string(), id: z.string(), description: z.string(), summary: z.string() },
     async ({ project, id, description, summary }) =>
       text(updateDescription(vaultRoot, project, id, description, summary, "agent"))
@@ -149,14 +149,14 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
 
   server.tool(
     "add_comment",
-    "Оставить комментарий в задаче — обсуждение, уточняющий вопрос человеку, промежуточная реплика по ходу работы. Для реального изменения сути задачи (описания) после того как обсуждение к чему-то привело — используйте update_description, а не это.",
+    "Leave a comment on a task — discussion, a clarifying question for the human, a passing remark while working. To actually change the task's substance (its description) once discussion has led somewhere, use update_description, not this.",
     { project: z.string(), id: z.string(), text: z.string() },
     async ({ project, id, text: body }) => text(addComment(vaultRoot, project, id, body, "agent"))
   );
 
   server.tool(
     "delete_task",
-    "Полностью удалить задачу (файл и вся её история) — например, если завели дубликат или подзадача больше не нужна. Каскадно удаляет и все её подзадачи. Необратимо — не для смены статуса, для этого есть update_status.",
+    "Permanently delete a task (its file and all its history) — e.g. a duplicate, or a subtask that's no longer needed. Cascades to all of its subtasks. Irreversible — not for changing status, use update_status for that.",
     { project: z.string(), id: z.string() },
     async ({ project, id }) => {
       deleteTask(vaultRoot, project, id);
