@@ -24,6 +24,7 @@ AgentBoard is built around both problems directly, not bolted on after the fact:
 - **`get_next_task`** — an agent asks the board what to do next instead of holding the plan in its own context. Survives context resets, session restarts, even a different agent picking up the same project.
 - **🚩 Needs-input flag** — independent of status. A stuck agent flags the task and moves on to the next one instead of looping on it. You see exactly which cards need you, at a glance, from the sidebar — no digging through columns.
 - **Real version history** — not "last edited 2 hours ago." Every substantive rewrite of a task's description is a checkpoint with a summary of *what changed and why*, so a human catching up after a long autonomous run reads three checkpoints instead of the whole activity log.
+- **Project memory** — tasks die, knowledge doesn't. Reusable conclusions (the final formula, the chosen approach, the pitfall that cost a day) live as linked knowledge notes agents read at the start of every session and reference from tasks with `[[wikilinks]]`. See below.
 - **In Review, on purpose** — a dedicated stage between "the agent thinks it's done" and "a human confirmed it's done," because those are not the same claim, and conflating them is how you stop trusting the board.
 
 ## It's just markdown
@@ -50,9 +51,24 @@ Open any task in a plain text editor and you'll see exactly what the UI shows yo
 
 **Subtasks are real entities** with their own status, not a checklist — because a subtask an agent is working on deserves its own history too.
 
+**Descriptions and comments are full Markdown** — headings, tables, code blocks, task lists — rendered in the UI and stored as plain text in the file. Agents write real specs, not flattened prose.
+
+## Project memory — knowledge that outlives its tasks
+
+The problem with every process tracker: when a task closes, whatever it *taught you* closes with it. Three months later the final formula, the rejected approach, and the reason it was rejected are buried in a done card nobody will reread.
+
+AgentBoard gives each project a memory: a folder of small knowledge notes (`memory/<id>.md`), one idea per note, addressed from tasks and other notes by `[[wikilinks]]`:
+
+- A note's **body is the current truth** — the coefficients as they are *now*.
+- Its **history is the path there** — versioned checkpoints with a summary of what changed and why, so "why did we abandon regional normalization?" is one click away, without polluting the current answer.
+- **Agents keep it alive as part of their protocol**: read the note index at the start of every session, follow `[[links]]` found in tasks before working, write a note the moment something reusable is settled — not when the task closes. The tool descriptions themselves teach the discipline: one note = one idea, no work logs, keep rejected approaches as one line with a *revisit-if* condition.
+- **Humans read it in the UI** (Memory button on the board, clickable wikilinks everywhere) and can edit any note — every edit is a version, same as everything else.
+
+It's all plain markdown files with standard wikilink syntax, so your knowledge graph stays portable and readable by the wider tool ecosystem — nothing is locked in.
+
 ## MCP-native
 
-Point any MCP-compatible agent at the vault and it gets `list_projects`, `get_next_task`, `create_task`, `update_description`, `set_needs_input`, `delete_task`, and more. See [AGENTS.md](./AGENTS.md) for the full tool reference, the file format for direct access when MCP isn't available, and a protocol for agents running long, unattended loop/cycle sessions.
+Point any MCP-compatible agent at the vault and it gets 15 tools: `list_projects`, `get_next_task`, `create_task`, `update_description`, `set_needs_input`, `list_notes`, `get_note`, `upsert_note`, `delete_task`, and more. See [AGENTS.md](./AGENTS.md) for the full tool reference, the file format for direct access when MCP isn't available, and a protocol for agents running long, unattended loop/cycle sessions.
 
 No MCP client handy? The REST API underneath is the same one the UI uses — nothing is UI-only.
 
@@ -74,6 +90,17 @@ For production mode (single process, single port):
 npm run build        # builds web/dist and compiles the server
 npm start             # serves everything on http://127.0.0.1:4173
 ```
+
+### Run on startup (Windows)
+
+`start-agentboard.cmd` in the repo root runs the built server. To launch it automatically at logon, drop a small `.vbs` wrapper into your Startup folder (`Win+R` → `shell:startup`) so it runs without a console window:
+
+```vbs
+Set sh = CreateObject("WScript.Shell")
+sh.Run """C:\path\to\agentboard\start-agentboard.cmd""", 0, False
+```
+
+After that the board is always at http://127.0.0.1:4173 — for you and for any agent.
 
 ### Where the vault lives
 

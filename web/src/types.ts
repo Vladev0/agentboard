@@ -77,3 +77,21 @@ export interface VaultChangeEvent {
   slug: string;
   reason: "project" | "task";
 }
+
+/** One row of the generated memory index. */
+export interface NoteSummary {
+  id: string;
+  title: string;
+  hook: string;
+  sources: string[];
+  updated: string;
+  version: number;
+}
+
+/** A knowledge note: body = current truth, history = versioned path to it. */
+export interface Note extends NoteSummary {
+  created: string;
+  lastUsed: string;
+  body: string;
+  history: UpdateEntry[];
+}

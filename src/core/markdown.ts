@@ -2,6 +2,8 @@ import matter from "gray-matter";
 import type {
   ActivityEntry,
   CommentEntry,
+  Note,
+  NoteFrontmatter,
   ProjectConfig,
   SubtaskRef,
   TaskFrontmatter,
@@ -37,6 +39,10 @@ const TOP_SECTION_NAMES = new Set<string>([
   "Subtasks",
 ]);
 
+// Memory notes have their own (smaller) fixed section set and snapshot label.
+const NOTE_SECTION_NAMES = new Set<string>(["Body", "History"]);
+const NOTE_SNAPSHOT_LABEL = "Note text at this point:";
+
 // Shapes of the entry headers the tool writes inside a section, so a stray `### heading` in
 // free text (a comment, a description snapshot) isn't mistaken for the start of a new entry.
 const UPDATE_ENTRY_HEADER = /^v\d+\s*—/; //           "v3 — 2026-… — agent"
@@ -71,12 +77,12 @@ function fencedRanges(text: string): Array<[number, number]> {
 const notFenced = (ranges: Array<[number, number]>) => (idx: number) =>
   !ranges.some(([s, e]) => idx >= s && idx < e);
 
-function splitTopSections(body: string): Record<string, string> {
+function splitTopSections(body: string, sectionNames: Set<string> = TOP_SECTION_NAMES): Record<string, string> {
   const out: Record<string, string> = {};
   const re = /^##[ \t]+(.+?)[ \t]*$/gm;
   const outsideFence = notFenced(fencedRanges(body));
   const boundaries = [...body.matchAll(re)].filter(
-    (m) => outsideFence(m.index!) && TOP_SECTION_NAMES.has(m[1].trim())
+    (m) => outsideFence(m.index!) && sectionNames.has(m[1].trim())
   );
   for (let i = 0; i < boundaries.length; i++) {
     const name = boundaries[i][1].trim();
@@ -245,4 +251,49 @@ export function parseProjectFile(raw: string, slug: string): ProjectConfig {
 export function serializeProjectFile(config: ProjectConfig): string {
   const { slug, ...frontmatter } = config;
   return matter.stringify("", frontmatter);
+}
+
+export function parseNoteFile(raw: string): Note {
+  const { data, content } = matter(raw);
+  const frontmatter: NoteFrontmatter = {
+    id: data.id,
+    title: data.title,
+    sources: data.sources ?? [],
+    created: data.created,
+    updated: data.updated,
+    lastUsed: data.lastUsed ?? data.updated,
+    version: data.version ?? 1,
+  };
+
+  const sections = splitTopSections(content, NOTE_SECTION_NAMES);
+
+  const history: UpdateEntry[] = splitSubSections(sections["History"] ?? "", UPDATE_ENTRY_HEADER).map((s) => {
+    const m = /^v(\d+)\s*—\s*(.+?)\s*—\s*(.+)$/.exec(s.header);
+    const snapshotIdx = s.text.indexOf(NOTE_SNAPSHOT_LABEL);
+    const summaryRaw = snapshotIdx >= 0 ? s.text.slice(0, snapshotIdx) : s.text;
+    const description = snapshotIdx >= 0 ? s.text.slice(snapshotIdx + NOTE_SNAPSHOT_LABEL.length).trim() : "";
+    return {
+      version: m ? Number(m[1]) : 0,
+      timestamp: m ? m[2].trim() : "",
+      author: m ? m[3].trim() : "system",
+      summary: summaryRaw.replace(SUMMARY_PREFIX_RE, "").trim(),
+      description,
+    };
+  });
+
+  return { ...frontmatter, body: sections["Body"] ?? "", history };
+}
+
+export function serializeNoteFile(frontmatter: NoteFrontmatter, body: string, history: UpdateEntry[]): string {
+  const historyBlock = history
+    .slice()
+    .sort((a, b) => b.version - a.version)
+    .map(
+      (u) =>
+        `### v${u.version}${SEP}${u.timestamp}${SEP}${u.author}\n${SUMMARY_PREFIX} ${u.summary}\n\n${NOTE_SNAPSHOT_LABEL}\n${u.description}`
+    )
+    .join("\n\n");
+
+  const content = ["## Body", body.trim(), "", "## History", historyBlock, ""].join("\n");
+  return matter.stringify(content, frontmatter);
 }

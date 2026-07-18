@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { api } from "./api.js";
-import type { Locale, Project, Task, TaskSummary, VaultChangeEvent } from "./types.js";
+import type { Locale, Note, NoteSummary, Project, Task, TaskSummary, VaultChangeEvent } from "./types.js";
 
 function detectDefaultLocale(): Locale {
   const lang = navigator.language.toLowerCase();
@@ -30,6 +30,12 @@ interface State {
   locale: Locale;
   /** Set when the API is unreachable — distinct from "no projects exist yet" in the UI. */
   apiError: string | null;
+  /** Memory index view (in place of the board). */
+  memoryOpen: boolean;
+  /** Note summaries for the selected project — the generated index, also used to resolve [[wikilinks]]. */
+  notes: NoteSummary[] | null;
+  selectedNoteId: string | null;
+  selectedNote: Note | null;
 
   init: () => Promise<void>;
   selectProject: (slug: string) => Promise<void>;
@@ -37,6 +43,12 @@ interface State {
   reloadProjects: () => Promise<void>;
   openTask: (id: string) => Promise<void>;
   closeTask: () => void;
+  openMemory: () => Promise<void>;
+  closeMemory: () => void;
+  openNote: (id: string) => Promise<void>;
+  closeNote: () => void;
+  saveNote: (title: string, body: string, summary: string) => Promise<void>;
+  reloadNotes: () => Promise<void>;
   toggleSidebar: () => void;
   setLocale: (locale: Locale) => void;
   onVaultEvent: (event: VaultChangeEvent) => void;
@@ -70,6 +82,10 @@ export const useStore = create<State>((set, get) => ({
   loadingTasks: false,
   locale: loadStoredLocale(),
   apiError: null,
+  memoryOpen: false,
+  notes: null,
+  selectedNoteId: null,
+  selectedNote: null,
 
   init: async () => {
     try {
@@ -84,8 +100,18 @@ export const useStore = create<State>((set, get) => ({
   },
 
   selectProject: async (slug) => {
-    set({ selectedSlug: slug, selectedTaskId: null, selectedTask: null });
+    set({
+      selectedSlug: slug,
+      selectedTaskId: null,
+      selectedTask: null,
+      memoryOpen: false,
+      notes: null,
+      selectedNoteId: null,
+      selectedNote: null,
+    });
     await get().reloadTasks(slug);
+    // Load the note index too — it's tiny, and task views need it to resolve [[wikilinks]].
+    await get().reloadNotes();
   },
 
   reloadTasks: async (slug) => {
@@ -106,12 +132,54 @@ export const useStore = create<State>((set, get) => ({
   openTask: async (id) => {
     const slug = get().selectedSlug;
     if (!slug) return;
-    set({ selectedTaskId: id });
+    // Opening a task closes any note view; the memory index flag is cleared too.
+    set({ selectedTaskId: id, memoryOpen: false, selectedNoteId: null, selectedNote: null });
     const task = await api.getTask(slug, id);
     set({ selectedTask: task });
   },
 
   closeTask: () => set({ selectedTaskId: null, selectedTask: null }),
+
+  openMemory: async () => {
+    const slug = get().selectedSlug;
+    if (!slug) return;
+    set({ memoryOpen: true, selectedTaskId: null, selectedTask: null, selectedNoteId: null, selectedNote: null });
+    await get().reloadNotes();
+  },
+
+  closeMemory: () => set({ memoryOpen: false }),
+
+  reloadNotes: async () => {
+    const slug = get().selectedSlug;
+    if (!slug) return;
+    try {
+      const notes = await api.listNotes(slug);
+      set({ notes });
+    } catch {
+      set({ notes: [] });
+    }
+  },
+
+  // Opens a note ON TOP of wherever the user is: the task view (via a [[wikilink]])
+  // or the memory index. closeNote returns there because those flags stay set.
+  openNote: async (id) => {
+    const slug = get().selectedSlug;
+    if (!slug) return;
+    set({ selectedNoteId: id, selectedNote: null });
+    const note = await api.getNote(slug, id);
+    set({ selectedNote: note });
+  },
+
+  closeNote: () => set({ selectedNoteId: null, selectedNote: null }),
+
+  saveNote: async (title, body, summary) => {
+    const slug = get().selectedSlug;
+    const id = get().selectedNoteId;
+    if (!slug || !id) return;
+    const note = await api.saveNote(slug, id, { title, body, summary });
+    set({ selectedNote: note });
+    await get().reloadNotes();
+  },
 
   toggleSidebar: () =>
     set((s) => {

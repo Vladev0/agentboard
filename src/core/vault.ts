@@ -50,6 +50,14 @@ export function projectFile(vaultRoot: string, slug: string): string {
   return path.join(projectDir(vaultRoot, slug), "project.md");
 }
 
+export function memoryDir(vaultRoot: string, slug: string): string {
+  return path.join(projectDir(vaultRoot, slug), "memory");
+}
+
+export function noteFile(vaultRoot: string, slug: string, noteId: string): string {
+  return path.join(memoryDir(vaultRoot, slug), `${noteId}.md`);
+}
+
 export function tasksDir(vaultRoot: string, slug: string): string {
   return path.join(projectDir(vaultRoot, slug), "tasks");
 }

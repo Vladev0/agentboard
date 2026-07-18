@@ -36,6 +36,15 @@ interface Dictionary {
   taskCount: (n: number) => string;
   taskCountWithSubtasks: (total: number, subs: number) => string;
   newTaskButton: string;
+  memoryButton: string;
+  memoryTitle: string;
+  memoryEmptyText: string;
+  memoryHint: string;
+  saveButton: string;
+  noteHistoryHeading: (n: number) => string;
+  noteSourcesLabel: string;
+  brokenNoteTooltip: string;
+  noteCount: (n: number) => string;
   emptyColumn: string;
 
   newProjectModalTitle: string;
@@ -132,6 +141,16 @@ const en: Dictionary = {
   taskCount: (n) => `${n} ${n === 1 ? "task" : "tasks"}`,
   taskCountWithSubtasks: (total, subs) => `${total} ${total === 1 ? "task" : "tasks"} · ${subs} in subtasks`,
   newTaskButton: "+ Task",
+  memoryButton: "Memory",
+  memoryTitle: "Project memory",
+  memoryEmptyText:
+    "No notes yet. Memory fills up as tasks produce reusable conclusions — final formulas, chosen approaches, pitfalls. Agents write notes as they work and read the index at the start of every session; tasks link to notes with [[wikilinks]].",
+  memoryHint: "Knowledge notes that outlive their tasks. Body = current truth, history = how it got there.",
+  saveButton: "Save",
+  noteHistoryHeading: (n) => `History (${n})`,
+  noteSourcesLabel: "Sources",
+  brokenNoteTooltip: "This note doesn't exist yet",
+  noteCount: (n) => `${n} ${n === 1 ? "note" : "notes"}`,
   emptyColumn: "Empty",
 
   newProjectModalTitle: "New project",
@@ -239,6 +258,16 @@ const es: Dictionary = {
   taskCount: (n) => `${n} ${n === 1 ? "tarea" : "tareas"}`,
   taskCountWithSubtasks: (total, subs) => `${total} ${total === 1 ? "tarea" : "tareas"} · ${subs} en subtareas`,
   newTaskButton: "+ Tarea",
+  memoryButton: "Memoria",
+  memoryTitle: "Memoria del proyecto",
+  memoryEmptyText:
+    "Aún no hay notas. La memoria se llena cuando las tareas producen conclusiones reutilizables: fórmulas finales, enfoques elegidos, trampas. Los agentes escriben notas mientras trabajan y leen el índice al inicio de cada sesión; las tareas enlazan a las notas con [[wikilinks]].",
+  memoryHint: "Notas de conocimiento que sobreviven a sus tareas. Cuerpo = verdad actual, historial = cómo llegó ahí.",
+  saveButton: "Guardar",
+  noteHistoryHeading: (n) => `Historial (${n})`,
+  noteSourcesLabel: "Fuentes",
+  brokenNoteTooltip: "Esta nota aún no existe",
+  noteCount: (n) => `${n} ${n === 1 ? "nota" : "notas"}`,
   emptyColumn: "Vacío",
 
   newProjectModalTitle: "Nuevo proyecto",
@@ -347,6 +376,16 @@ const ru: Dictionary = {
   taskCount: (n) => `${n} ${ruPlural(n, "задача", "задачи", "задач")}`,
   taskCountWithSubtasks: (total, subs) => `${total} ${ruPlural(total, "задача", "задачи", "задач")} · ${subs} в подзадачах`,
   newTaskButton: "+ Задача",
+  memoryButton: "Память",
+  memoryTitle: "Память проекта",
+  memoryEmptyText:
+    "Пока нет нот. Память наполняется, когда задачи дают переиспользуемые выводы — итоговые формулы, выбранные подходы, грабли. Агенты пишут ноты по ходу работы и читают индекс в начале каждой сессии; задачи ссылаются на ноты через [[wikilinks]].",
+  memoryHint: "Ноты знания, которые переживают свои задачи. Тело — актуальная истина, история — путь к ней.",
+  saveButton: "Сохранить",
+  noteHistoryHeading: (n) => `История (${n})`,
+  noteSourcesLabel: "Источники",
+  brokenNoteTooltip: "Такой ноты ещё нет",
+  noteCount: (n) => `${n} ${ruPlural(n, "нота", "ноты", "нот")}`,
   emptyColumn: "Пусто",
 
   newProjectModalTitle: "Новый проект",

@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { getNote, listNotes, upsertNote } from "../core/notes.js";
 import { createProject, deleteProject, listProjects } from "../core/project.js";
 import {
   addComment,
@@ -152,6 +153,58 @@ export function registerTools(server: McpServer, vaultRoot: string): void {
     "Leave a comment on a task — discussion, a clarifying question for the human, a passing remark while working. To actually change the task's substance (its description) once discussion has led somewhere, use update_description, not this.",
     { project: z.string(), id: z.string(), text: z.string() },
     async ({ project, id, text: body }) => text(addComment(vaultRoot, project, id, body, "agent"))
+  );
+
+  server.tool(
+    "list_notes",
+    "The index of the project's memory: one line per knowledge note (id, title, hook). Read this at the START of every session, before get_next_task — it's tiny, and it tells you what's already been settled so you don't re-derive or contradict it. Then get_note only the entries relevant to your current task.",
+    { project: z.string() },
+    async ({ project }) => text(listNotes(vaultRoot, project))
+  );
+
+  server.tool(
+    "get_note",
+    "One knowledge note in full: body = the CURRENT truth (latest formulas, chosen approach), history = how it got there (versioned summaries — read these when you need to know why something changed). Notes are addressed by [[id]] wikilinks — when a task description mentions [[some-note]], this is how you follow the link.",
+    {
+      project: z.string(),
+      id: z.string().describe("Note id — the [[wikilink]] target, e.g. 'rating-formula'"),
+      include_snapshots: z
+        .boolean()
+        .optional()
+        .describe("Include full body snapshots per version (archaeology); default false — summaries only"),
+    },
+    async ({ project, id, include_snapshots }) => {
+      const note = getNote(vaultRoot, project, id, { touch: true });
+      if (!include_snapshots) {
+        return text({ ...note, history: note.history.map(({ description, ...h }) => h) });
+      }
+      return text(note);
+    }
+  );
+
+  server.tool(
+    "upsert_note",
+    "Create or update a knowledge note — the project's memory. WHEN: you've just settled something reusable (a final formula, a validated approach, a decision and its why, a costly pitfall) — write it AT THAT MOMENT, don't wait for the task to close. Test: 'will a session that never saw this task need it?' No → don't write. NOT for: work logs, task summaries, anything derivable from code/files, anything already in a note (update that note instead). One note = one idea (if you can't fit the idea in the title, split into linked [[notes]]). When you replace an approach, keep the rejected one as a line 'Rejected: X because Y — revisit if Z'. `summary` is the commit message: what changed and why. Reference the note from the task you're working on by writing [[id]] in its description or a comment.",
+    {
+      project: z.string(),
+      id: z
+        .string()
+        .describe("Immutable kebab-case id, becomes the [[wikilink]] target, e.g. 'rating-formula'"),
+      title: z.string().describe("The one idea of this note, stated as a title"),
+      body: z.string().describe("The current truth — a few lines to a few paragraphs of markdown"),
+      summary: z.string().describe("What changed and why (like a commit message)"),
+      sources: z.array(z.string()).optional().describe("Task ids this knowledge came from, e.g. ['CR-3']"),
+    },
+    async ({ project, id, title, body, summary, sources }) => {
+      const { note, created, sizeWarning } = upsertNote(vaultRoot, project, {
+        id,
+        title,
+        body,
+        summary,
+        sources,
+      });
+      return text({ [created ? "created" : "updated"]: note.id, version: note.version, ...(sizeWarning ? { warning: sizeWarning } : {}) });
+    }
   );
 
   server.tool(

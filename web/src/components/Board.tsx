@@ -9,6 +9,7 @@ export function Board() {
   const project = useStore((s) => s.projects.find((p) => p.slug === s.selectedSlug));
   const tasks = useStore((s) => (s.selectedSlug ? s.tasksBySlug[s.selectedSlug] ?? [] : []));
   const setStatus = useStore((s) => s.setStatus);
+  const openMemory = useStore((s) => s.openMemory);
   const apiError = useStore((s) => s.apiError);
   const init = useStore((s) => s.init);
   const [showNewTask, setShowNewTask] = useState(false);
@@ -55,12 +56,21 @@ export function Board() {
               : t.taskCount(project.taskCount)}
           </p>
         </div>
-        <button
-          onClick={() => setShowNewTask(true)}
-          className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-white hover:bg-accent-hover"
-        >
-          {t.newTaskButton}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => openMemory()}
+            title={t.memoryTitle}
+            className="rounded-md border border-neutral-200 px-3 py-1.5 text-[13px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+          >
+            {t.memoryButton}
+          </button>
+          <button
+            onClick={() => setShowNewTask(true)}
+            className="rounded-md bg-accent px-3 py-1.5 text-[13px] font-medium text-white hover:bg-accent-hover"
+          >
+            {t.newTaskButton}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 gap-4 overflow-x-auto px-5 py-4">

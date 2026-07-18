@@ -1,4 +1,4 @@
-import type { Priority, Project, Task, TaskSummary } from "./types.js";
+import type { Note, NoteSummary, Priority, Project, Task, TaskSummary } from "./types.js";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -68,6 +68,16 @@ export const api = {
     request<Task>(`/api/projects/${slug}/tasks/${id}/comments`, {
       method: "POST",
       body: JSON.stringify({ text, author }),
+    }),
+
+  listNotes: (slug: string) => request<NoteSummary[]>(`/api/projects/${slug}/notes`),
+
+  getNote: (slug: string, noteId: string) => request<Note>(`/api/projects/${slug}/notes/${noteId}`),
+
+  saveNote: (slug: string, noteId: string, input: { title: string; body: string; summary?: string }) =>
+    request<Note>(`/api/projects/${slug}/notes/${noteId}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
     }),
 
   deleteTask: async (slug: string, id: string): Promise<void> => {

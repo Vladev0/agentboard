@@ -49,11 +49,66 @@ when reading history. As an agent, always provide a real summary.
 | `update_description(description, summary)` | **The big update** — rewrite the task's substance with a required "what and why" summary. Creates a new version with a full snapshot of the description |
 | `add_comment` | Discussion / a question for the human / a passing remark |
 | `set_needs_input(blocked)` | Flag or unflag "needs a human" — independent of status, work can stall at any stage. A task flagged this way drops out of `get_next_task` |
+| `list_notes(project)` | The generated index of the project's memory — one line per note. **Read at the start of every session**, before `get_next_task` |
+| `get_note(project, id)` | One knowledge note in full: body = current truth, history = how it got there. This is how you follow a `[[wikilink]]` |
+| `upsert_note(project, id, title, body, summary, sources?)` | Create or update a knowledge note the moment you settle something reusable — see "Project memory" below |
 | `delete_task` | Permanently delete a task (a duplicate, no longer needed). Cascades to subtasks. Irreversible |
 | `delete_project` | Permanently delete an entire project — all tasks and history. Irreversible, only on an explicit human request |
 
 **Main rule:** don't call `list_tasks`/`get_task` for the whole project if you just need the
 next single task — use `get_next_task`. It saves context and keeps you from losing the plan.
+
+## Project memory — a graph of knowledge notes
+
+A closed task is not just "done" — sometimes it produced something the *next* task (or a
+session months later) needs: a final formula, a validated approach, a decision and its "why",
+a pitfall that cost a day. That's what project memory is for: **one note = one file = one
+idea** in `memory/<id>.md`, addressed from tasks and other notes by `[[id]]` wikilinks. A
+note's **body is the current truth**; its **history holds the versioned path to it** — when
+coefficients change, the old ones (and why they changed) stay readable without polluting the
+current answer.
+
+**Reading — every session:**
+1. `list_notes(project)` at cold start, before `get_next_task`. It's one line per note; the
+   cost is trivial, and it keeps you from re-deriving or contradicting what's settled.
+2. When a task's description or comment mentions `[[some-note]]`, follow it with `get_note`
+   before working — that's the knowledge placed there for you.
+3. Need to know *why* something is the way it is? Read the note's history summaries
+   (`get_note` returns them). Full old snapshots exist too (`include_snapshots`) — rarely
+   needed.
+
+**Writing — the moment you settle something, not when the task closes:**
+The test is one question: *"will a session that never saw this task need this?"*
+- Yes → `upsert_note` right then. Distill: a few lines of markdown, the conclusion itself.
+  Pass `sources` (task ids) so it stays verifiable, and put a `[[id]]` link in the task's
+  description or a comment so the next person lands on it from the work.
+- No → write nothing. Most tasks produce zero notes, and that's correct. If one task made
+  you write 3+ notes, you're logging, not distilling — stop.
+
+**NOT memory:** work logs, task summaries, anything derivable from code/files, anything
+already covered by an existing note (update that note instead — you read the index, so you
+know what exists).
+
+**Granularity — how big is one note:**
+- *Title test*: if the note's one idea doesn't fit in its title, it's more than one idea —
+  split into linked `[[notes]]`. (`[[rating-formula]]` — good; `[[model-conclusions]]` — red flag.)
+- *Link test*: if you want to reference a *part* of a note, that part should be its own note.
+- *Size*: 1–3 paragraphs is the norm; past ~a page the tool will nudge you to split.
+- When you replace an approach, keep one line: `Rejected: X because Y — revisit if Z`. The
+  return-condition `Z` is what makes a parked idea findable at the right moment.
+
+**Example — good note** (`[[rating-formula]]`, sources: [CR-3]):
+> score = 0.6·z(econ) + 0.4·z(promo), winsorized 1%/99% per pharmacy format.
+> Rejected: regional normalization — amplifies skew (CR-3 v4); revisit if per-region volumes even out.
+
+**Example — NOT a note:** "Completed the Q2 data refresh: downloaded OLAP exports, fixed
+encoding, loaded into the model, all tests pass." (That's a work log — it belongs in the
+task's update, and it's already there.)
+
+**Consolidation:** memory is curated by re-reading it, merging duplicates, and updating stale
+notes — run as a normal board task ("consolidate project memory") every few weeks: the agent
+proposes changes via `upsert_note`, the human reviews in the UI. Don't silently rewrite
+others' notes outside a consolidation pass.
 
 ## Protocol for long loop/cycle sessions
 
@@ -64,13 +119,15 @@ between iterations, and so a human checking in after many cycles immediately und
 what happened.
 
 **Cold start (beginning of a new session/iteration):**
-1. `get_next_task(project)` — don't page through the task list by hand, ask the system what's
+1. `list_notes(project)` — the index of the project's settled knowledge, one line per note.
+   Read it first, every session; `get_note` the entries relevant to what you're about to do.
+2. `get_next_task(project)` — don't page through the task list by hand, ask the system what's
    next. It already accounts for status, order, and blockers, and searches the whole project
    at every depth, so nested subtasks are covered too — you don't have to walk the tree.
-2. If a task comes back — `get_task` on it, read `description` and the last 1-2
+3. If a task comes back — `get_task` on it, read `description` and the last 1-2
    `updates[].summary` entries. That's almost always enough to understand what's been done
    and why, without reading the whole comment/activity history.
-3. If `get_next_task` returns `null` — every task everywhere in the project is either done or
+4. If `get_next_task` returns `null` — every task everywhere in the project is either done or
    stuck on a human (see below). Don't invent work for yourself — that's a signal to stop.
 
 **Each iteration:**
@@ -81,6 +138,9 @@ what happened.
 - Need to break work down? → `create_subtask`, rather than holding the plan in your own
   context. The system is your memory between iterations — don't rely on "remembering it
   yourself."
+- Settled something reusable during the step (formula, approach, decision, pitfall)?
+  → `upsert_note` right then and link it from the task with `[[id]]` — see "Project memory"
+  above. Most tasks don't need this; the ones that do, really do.
 
 **If you're stuck and need a human decision:**
 - **Don't change status** — work can stall at any stage (in Backlog just as easily as In
@@ -104,8 +164,17 @@ If MCP isn't available, you can read and edit files directly. Structure:
 
 ```
 vault/projects/<slug>/project.md         # project config: name, key, statuses, labels
+vault/projects/<slug>/memory/<id>.md     # one knowledge note = one file (see "Project memory")
 vault/projects/<slug>/tasks/<KEY-N>.md   # one task = one file
 ```
+
+Note file format (`memory/<id>.md`): frontmatter (`id`, `title`, `sources`, `created`,
+`updated`, `lastUsed`, `version`) + exactly two reserved sections — `## Body` (the current
+truth) and `## History` (entries `### vN — <ISO> — <author>` with `Summary:` and
+`Note text at this point:` + full body snapshot, same shape as a task's Updates). The note
+`id` is its filename and its `[[wikilink]]` address: kebab-case ASCII, immutable — renaming
+breaks links, so don't. `[[id]]` and `[[id|shown text]]` are recognized in task and note
+markdown everywhere outside code blocks.
 
 Task file format:
 

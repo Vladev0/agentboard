@@ -89,3 +89,40 @@ export interface TaskSummary {
   blocked: boolean;
   subtaskProgress: { done: number; total: number };
 }
+
+/**
+ * A knowledge note — one node of the project's memory. Lives in `memory/<id>.md`,
+ * addressed by `[[id]]` wikilinks from tasks and other notes. The body is the CURRENT
+ * truth; history holds versioned snapshots of how it got there (same mechanism as a
+ * task's updates). Unlike tasks, notes don't die — they get updated or superseded.
+ */
+export interface NoteFrontmatter {
+  /** Immutable kebab-case slug — the wikilink target and the filename. */
+  id: string;
+  title: string;
+  /** Task ids this knowledge came from (provenance). */
+  sources: string[];
+  created: string;
+  updated: string;
+  /** Last time an agent read this note — feeds future relevance/decay ranking. */
+  lastUsed: string;
+  version: number;
+}
+
+export interface Note extends NoteFrontmatter {
+  /** Current truth. */
+  body: string;
+  /** Versioned checkpoints: summary of what/why changed + full body snapshot. */
+  history: UpdateEntry[];
+}
+
+/** One line of the generated memory index — cheap to list, cheap to read. */
+export interface NoteSummary {
+  id: string;
+  title: string;
+  /** First line of the body, as a scannable hook. */
+  hook: string;
+  sources: string[];
+  updated: string;
+  version: number;
+}
