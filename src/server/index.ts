@@ -50,7 +50,7 @@ await registerProjectRoutes(app);
 await registerTaskRoutes(app);
 
 const webDist = path.resolve(process.cwd(), "web", "dist");
-await app.register(fastifyStatic, { root: webDist, wildcard: false });
+await app.register(fastifyStatic, { root: webDist });
 app.setNotFoundHandler((req, reply) => {
   if (req.raw.url?.startsWith("/api") || req.raw.url?.startsWith("/ws")) {
     reply.code(404).send({ error: "not_found" });

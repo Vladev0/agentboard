@@ -100,7 +100,7 @@ export function Board() {
                 <span className="text-neutral-400">{columnTasks.length}</span>
               </div>
               <div
-                className={`flex-1 overflow-y-auto rounded-md transition-colors ${
+                className={`flex-1 overflow-y-auto rounded-md pr-1.5 transition-colors ${
                   isDragOver ? "bg-accent/5 ring-1 ring-inset ring-accent/30" : ""
                 }`}
               >
