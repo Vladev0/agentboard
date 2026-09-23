@@ -68,9 +68,15 @@ It's all plain markdown files with standard wikilink syntax, so your knowledge g
 
 ## MCP-native
 
-Point any MCP-compatible agent at the vault and it gets 15 tools: `list_projects`, `get_next_task`, `create_task`, `update_description`, `set_needs_input`, `list_notes`, `get_note`, `upsert_note`, `delete_task`, and more. See [AGENTS.md](./AGENTS.md) for the full tool reference, the file format for direct access when MCP isn't available, and a protocol for agents running long, unattended loop/cycle sessions.
+Point any MCP-compatible agent at the vault and it gets 17 tools: `list_projects`, `get_next_task`, `create_task`, `update_description`, `set_needs_input`, `list_notes`, `get_note`, `upsert_note`, `delete_task`, and more. See [AGENTS.md](./AGENTS.md) for the full tool reference, the file format for direct access when MCP isn't available, and a protocol for agents running long, unattended loop/cycle sessions.
 
 No MCP client handy? The REST API underneath is the same one the UI uses — nothing is UI-only.
+
+### One-click MCP bundle
+
+Every version is packaged as a self-contained `.mcpb` file in [GitHub Releases](https://github.com/Vladev0/agentboard/releases). Compatible desktop clients can install it directly; AgentBoard asks where to keep the Markdown vault and configures the MCP server automatically.
+
+Releases are also published to the official MCP Registry under `io.github.vladev0/agentboard`, so MCP clients and downstream catalogs can discover new versions without manual submissions.
 
 ## Quick start
 

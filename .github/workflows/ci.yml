@@ -1,0 +1,33 @@
+name: Verify
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix web
+      - name: Test and build
+        run: |
+          npm test
+          npm run build
+      - name: Validate discovery and MCP bundle
+        run: |
+          npm run build:site
+          npm run build:mcpb-stage
+          npm ci --omit=dev --ignore-scripts --prefix .distribution/mcpb
+          npx -y @anthropic-ai/mcpb validate .distribution/mcpb/manifest.json
+          npm run validate:distribution
