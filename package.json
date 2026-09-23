@@ -1,10 +1,27 @@
 {
   "name": "agentboard",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "license": "MIT",
   "description": "Local kanban task board for humans and AI coding agents, backed by a markdown vault.",
+  "homepage": "https://vladev0.github.io/agentboard/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vladev0/agentboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Vladev0/agentboard/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "kanban",
+    "local-first",
+    "task-management"
+  ],
+  "mcpName": "io.github.vladev0/agentboard",
   "scripts": {
     "setup": "npm install && npm --prefix web install",
     "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
@@ -12,6 +29,9 @@
     "dev:web": "npm run dev --prefix web",
     "build:web": "npm run build --prefix web",
     "build": "npm run build:web && tsc -p tsconfig.json",
+    "build:site": "node scripts/build-discovery-site.mjs",
+    "build:mcpb-stage": "node scripts/build-mcpb-stage.mjs",
+    "validate:distribution": "node scripts/validate-distribution.mjs",
     "start": "node dist/server/index.js",
     "mcp": "tsx src/mcp/index.ts",
     "seed": "tsx src/core/seed.ts",

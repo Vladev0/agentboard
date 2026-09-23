@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentBoard — local task and memory board for AI coding agents</title>
+  <meta name="description" content="A local-first kanban board and durable project memory for humans and autonomous coding agents. Markdown-backed, MCP-native, and self-hosted.">
+  <meta name="keywords" content="MCP server, AI coding agents, local-first kanban, agent task management, model context protocol, project memory">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://vladev0.github.io/agentboard/">
+  <link rel="alternate" type="application/atom+xml" title="AgentBoard releases" href="feed.xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AgentBoard — task memory for AI coding agents">
+  <meta property="og:description" content="Give autonomous agents a durable task queue, explicit human handoffs, and project memory — all in local Markdown files.">
+  <meta property="og:url" content="https://vladev0.github.io/agentboard/">
+  <meta property="og:image" content="https://vladev0.github.io/agentboard/screenshots/board-overview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AgentBoard",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "softwareVersion": "{{VERSION}}",
+    "dateModified": "{{UPDATED}}",
+    "description": "Local-first kanban task board and durable project memory for humans and autonomous coding agents.",
+    "url": "https://vladev0.github.io/agentboard/",
+    "downloadUrl": "https://github.com/Vladev0/agentboard/releases/latest",
+    "codeRepository": "https://github.com/Vladev0/agentboard",
+    "license": "https://opensource.org/license/mit",
+    "isAccessibleForFree": true
+  }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="AgentBoard home"><span class="brand-mark">A</span> AgentBoard</a>
+    <nav aria-label="Primary navigation">
+      <a href="#workflow">How it works</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/Vladev0/agentboard">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> Local-first · MCP-native · MIT</p>
+        <h1>A task board that remembers what your agents forget.</h1>
+        <p class="lede">AgentBoard gives coding agents a durable queue, explicit human handoffs, and project memory. You keep a clean kanban view; the source of truth stays in readable Markdown.</p>
+        <div class="actions">
+          <a class="primary" href="https://github.com/Vladev0/agentboard/releases/latest">Download latest release</a>
+          <a class="secondary" href="https://github.com/Vladev0/agentboard">Read the source</a>
+        </div>
+        <p class="version">Current release: v{{VERSION}} · no cloud account required</p>
+      </div>
+      <figure class="product-shot">
+        <img src="screenshots/board-overview.png" alt="AgentBoard showing a local kanban project with task columns and human-input indicators" width="1500" height="900">
+        <figcaption>Humans see the board. Agents use the same data through MCP.</figcaption>
+      </figure>
+    </section>
+
+    <section class="problem-grid" aria-label="Core benefits">
+      <article><span>01</span><h2>Agents resume cleanly</h2><p><code>get_next_task</code> returns the next actionable card after a context reset or a different agent takes over.</p></article>
+      <article><span>02</span><h2>Blocked work stays visible</h2><p>A needs-input flag pauses one task without stopping the whole autonomous cycle.</p></article>
+      <article><span>03</span><h2>Knowledge outlives tasks</h2><p>Versioned memory notes preserve decisions, formulas, and pitfalls without turning the board into a work log.</p></article>
+    </section>
+
+    <section class="workflow" id="workflow">
+      <div class="section-copy">
+        <p class="eyebrow">A boring file format is a feature</p>
+        <h2>Markdown underneath. A focused interface on top.</h2>
+        <p>Projects, tasks, comments, checkpoints, and memory notes are ordinary files. Search them, diff them, back them up, or sync the folder with tools you already trust.</p>
+        <ul>
+          <li>No database and no vendor lock-in</li>
+          <li>Separate agent-complete from human-verified work</li>
+          <li>REST API and 17 MCP tools use the same source of truth</li>
+        </ul>
+      </div>
+      <div class="file-card" aria-label="Example AgentBoard vault structure">
+        <div class="file-card-head"><span></span><span></span><span></span><strong>vault/</strong></div>
+        <pre><code>projects/
+└── product-launch/
+    ├── project.md
+    ├── tasks/
+    │   ├── PL-1.md
+    │   └── PL-2.md
+    └── memory/
+        ├── release-policy.md
+        └── user-model.md</code></pre>
+      </div>
+    </section>
+
+    <section class="install" id="install">
+      <p class="eyebrow">Start locally</p>
+      <h2>Clone, set up, run.</h2>
+      <div class="terminal" role="region" aria-label="Installation commands">
+        <div><span>$</span> git clone https://github.com/Vladev0/agentboard.git</div>
+        <div><span>$</span> cd agentboard</div>
+        <div><span>$</span> npm run setup</div>
+        <div><span>$</span> npm run dev</div>
+      </div>
+      <p>Or install the MCP bundle from the <a href="https://github.com/Vladev0/agentboard/releases/latest">latest GitHub release</a>. The bundle asks where to keep your vault and configures the MCP server for you.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>AgentBoard is free, open source, and released under MIT.</p>
+    <div><a href="https://github.com/Vladev0/agentboard/issues">Issues</a><a href="feed.xml">Release feed</a><a href="llms.txt">llms.txt</a></div>
+  </footer>
+</body>
+</html>

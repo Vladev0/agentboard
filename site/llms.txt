@@ -1,0 +1,21 @@
+# AgentBoard
+
+> Local-first kanban task board and durable project memory for humans and autonomous coding agents.
+
+AgentBoard stores projects, tasks, version history, comments, and knowledge notes as readable Markdown files. It exposes the same data through a web UI, REST API, and Model Context Protocol server.
+
+## Primary links
+
+- Documentation and source: https://github.com/Vladev0/agentboard
+- Releases: https://github.com/Vladev0/agentboard/releases
+- Issue tracker: https://github.com/Vladev0/agentboard/issues
+- License: MIT
+
+## Useful capabilities
+
+- Durable task queue across agent context resets and sessions
+- Explicit needs-human-input flag independent of workflow status
+- A review stage separating agent-complete from human-verified work
+- Versioned project-memory notes linked with wiki syntax
+- Seventeen MCP tools for projects, tasks, comments, status, and memory
+- Local Markdown storage with no hosted database

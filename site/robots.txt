@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vladev0.github.io/agentboard/sitemap.xml
